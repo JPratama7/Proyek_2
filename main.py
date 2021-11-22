@@ -3,28 +3,40 @@ import os
 from telebot import TeleBot, types
 from dotenv import load_dotenv
 from dataclasses import dataclass
-from lib import checkuser, create_cursor, logfunc
+from lib import checkuser, logfunc, create_conn
+from random import randint
 
 # Global Variable
 load_dotenv()
 TOKEN = os.getenv('API')
-bot = TeleBot()
+bot = TeleBot(TOKEN)
 
 global_dict = {}
 
 @dataclass
 class DataPengumu:
+    id_peng = randint(1000,9999)
     id_tele = int
     isi = str
     jurusan = int
     prodi = int
     tingkat = int
 
+    def getastuple(self):
+        id_peng = self.id_peng
+        id_tele = self.id_tele
+        isi = self.isi
+        jurusan = self.jurusan
+        prodi = self.prodi
+        tingkat = self.tingkat
+        return (id_peng,id_tele,isi,jurusan,prodi,tingkat)
+
+
 class Pengumuman:
     def first_step(self,message):
         chat_id = int(message.chat.id)
         try:
-            if checkuser(chat_id):
+            if not checkuser(chat_id):
                 bot.reply_to(message, "Anda bukan admin")
             else:
                 msg = bot.reply_to(message, """\
@@ -67,8 +79,8 @@ class Pengumuman:
             data.prodi = prodi
             msg = bot.reply_to(message, 'Tingkat : ')
             bot.register_next_step_handler(msg, self.fifth_step)
-        except:
-            logfunc("5TH Pengumuman")
+        except Exception as e:
+            logfunc("5TH Pengumuman", e)
 
     def fifth_step(self, message):
         try:
@@ -80,7 +92,7 @@ class Pengumuman:
             markup.add('ya', 'tidak')
             msg = bot.reply_to(message, f'Isi: {data.isi}\nJurusan : {data.jurusan}\nProdi : {data.prodi}\nTingkat : {data.tingkat}', reply_markup=markup)
             bot.register_next_step_handler(msg, self.commit_to_database)
-        except:
+        except Exception as e:
             logfunc('commit database', e)
             bot.reply_to(message, 'oooops terjadi error silahkan lapor ke admin terjadi error silahkan lapor ke admin')
 
@@ -89,13 +101,14 @@ class Pengumuman:
             chat_id = message.chat.id
             keputusan = message.text
             user = global_dict[chat_id]
-            cursor = create_cursor()
             if (keputusan == u'ya'):
-                insert = "INSERT INTO user (tele_id,nama,alamat) VALUES (%s,%s,%s)"
-                val = (user.teleg_id, user.nama, user.alamat)
+                insert = "INSERT INTO isi_pengumuman VALUES (%s,%s,%s,%s,%s,%s)"
+                val = user.getastuple()
                 try:
-                    with create_cursor() as conn:
-                        conn.execute(insert, val)
+                    with create_conn() as conn:
+                        cursor = conn.cursor()
+                        cursor.execute(insert, val)
+                        conn.close()
                     bot.send_message(chat_id, "ok data sudah terinput")
                 except Exception as e:
                     bot.send_message(chat_id, "terjadi error silahkan ulang kembali")
@@ -104,7 +117,14 @@ class Pengumuman:
                 bot.send_message(chat_id, "Silahkan tekan -> /daftar untuk melakukan pendaftaran ulang")
             # remove used object at user_dict
             del global_dict[chat_id]
-            cursor.close()
         except Exception as e:
             logfunc('commit database', e)
             bot.reply_to(message, 'oooops terjadi error silahkan lapor ke admin terjadi error silahkan lapor ke admin')
+
+pengu = Pengumuman()
+
+bot.register_message_handler(pengu.first_step, commands=["start"])
+
+
+print("BOT IS BERLARI")
+bot.infinity_polling()

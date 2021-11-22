@@ -24,21 +24,14 @@ def create_conn():
         print(e)
         logfunc("DB CONN NOT CREATED", e)
 
-def create_cursor():
-    db = create_conn()
-    try:
-        cursor = db.cursor()
-        return cursor
-    except Exception as e:
-        logfunc('CURSOR NOT CREATED', e)
-
 
 def checkuser(telegramid):
-    cursor = create_cursor()
-    cursor.execute(f"SELECT COUNT(*) FROM user WHERE tele_id ={telegramid}")
-    user = cursor.fetchone()
-    cursor.close()
-    if user[0] != 0:
-        return True
-    else:
-        return False
+    with create_conn() as conn:
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT COUNT(*) FROM user WHERE id_tele ={telegramid}")
+        user = cursor.fetchone()
+        cursor.close()
+        if user[0] != 0:
+            return True
+        else:
+            return False
