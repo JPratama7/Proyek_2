@@ -134,6 +134,7 @@ class ListPengumuman:
                     cursor.execute(query)
                     list_data = cursor.fetchall()
                     bot.send_message(chat_id,"Sedang mengambil data")
+                    conn.close()
                     for data in list_data:
                         isi, nama_jur, prodi,tingkat = data
                         text = f"Jurusan : {nama_jur}\nProdi : {prodi}\nTingkat : {tingkat}\nIsi : \n{isi}\n"
