@@ -3,7 +3,7 @@ import os
 from telebot import TeleBot, types
 from dotenv import load_dotenv
 from dataclasses import dataclass
-from lib import checkuser, logfunc, create_conn
+from lib import checkuser, logfunc, create_conn, converttodate
 from random import randint
 
 # Global Variable
@@ -21,6 +21,7 @@ class DataPengumu:
     jurusan = int
     prodi = int
     tingkat = int
+    tanggal = str
 
     def getastuple(self):
         id_peng = self.id_peng
@@ -29,7 +30,8 @@ class DataPengumu:
         jurusan = self.jurusan
         prodi = self.prodi
         tingkat = self.tingkat
-        return (id_peng,id_tele,isi,jurusan,prodi,tingkat)
+        tanggal = self.tanggal
+        return (id_peng,id_tele,isi,jurusan,prodi,tingkat,tanggal)
 
 
 class Pengumuman:
@@ -88,9 +90,22 @@ class Pengumuman:
             tingkat = message.text
             data = global_dict[chat_id]
             data.tingkat = tingkat
+            msg = bot.send_message(chat_id, "Waktu dengan format (DD/MM/YYYY HH:MM) :")
+            bot.register_next_step_handler(msg, self.six_step)
+        except Exception as e:
+            logfunc("FIFTH_STEP_DATE", e)
+
+
+    def six_step(self, message):
+        try:
+            chat_id = message.chat.id
+            tanggal = converttodate(message.text)
+            data = global_dict[chat_id]
+            data.tanggal = tanggal
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
             markup.add('ya', 'tidak')
-            msg = bot.reply_to(message, f'Isi: {data.isi}\nJurusan : {data.jurusan}\nProdi : {data.prodi}\nTingkat : {data.tingkat}', reply_markup=markup)
+            msg = bot.reply_to(message, f'Date-Time : {data.tanggal}\nJurusan : {data.jurusan}\n'
+                                        f'Prodi : {data.prodi}\nTingkat : {data.tingkat}\nIsi: {data.isi}\n', reply_markup=markup)
             bot.register_next_step_handler(msg, self.commit_to_database)
         except Exception as e:
             logfunc('commit database', e)
@@ -102,7 +117,7 @@ class Pengumuman:
             keputusan = message.text
             user = global_dict[chat_id]
             if (keputusan == u'ya'):
-                insert = "INSERT INTO isi_pengumuman VALUES (%s,%s,%s,%s,%s,%s)"
+                insert = "INSERT INTO isi_pengumuman VALUES (%s,%s,%s,%s,%s,%s,%s)"
                 val = user.getastuple()
                 try:
                     with create_conn() as conn:
@@ -114,7 +129,8 @@ class Pengumuman:
                     bot.send_message(chat_id, "terjadi error silahkan ulang kembali")
                     logfunc('commit database', e)
             else:
-                bot.send_message(chat_id, "Silahkan tekan -> /daftar untuk melakukan pendaftaran ulang")
+                msg = bot.send_message(chat_id, "Silahkan tekan -> /daftar untuk melakukan pendaftaran ulang")
+                bot.register_next_step_handler(msg, self.first_step)
             # remove used object at user_dict
             del global_dict[chat_id]
         except Exception as e:
@@ -128,7 +144,7 @@ class ListPengumuman:
             if checkuser(chat_id):
                 with create_conn() as conn:
                     cursor = conn.cursor()
-                    query = "SELECT isi_pengumuman.isi, jurusan.nama_jur, prodi.nama_prod, isi_pengumuman.tingkat " \
+                    query = "SELECT isi_pengumuman.id_pengumuman, isi_pengumuman.isi, jurusan.nama_jur, prodi.nama_prod, isi_pengumuman.tingkat " \
                             "FROM isi_pengumuman INNER JOIN jurusan ON isi_pengumuman.jurusan = jurusan.id_jur " \
                             "INNER JOIN prodi ON isi_pengumuman.prodi=prodi.id_prodi"
                     cursor.execute(query)
@@ -136,13 +152,53 @@ class ListPengumuman:
                     bot.send_message(chat_id,"Sedang mengambil data")
                     conn.close()
                     for data in list_data:
-                        isi, nama_jur, prodi,tingkat = data
-                        text = f"Jurusan : {nama_jur}\nProdi : {prodi}\nTingkat : {tingkat}\nIsi : \n{isi}\n"
+                        id_pengumuman, isi, nama_jur, prodi,tingkat = data
+                        text = f"ID Pengumuman: {id_pengumuman}\nJurusan : {nama_jur}\nProdi : {prodi}\nTingkat : {tingkat}\nIsi : \n{isi}\n"
                         bot.send_message(chat_id, text)
             else:
                 bot.reply_to(message, "Anda Bukan Admin")
         except Exception as e:
             logfunc("info pengumuman", e)
+
+class DeletePengumuman:
+    def deletePengumuman(self, message):
+        chat_id = message.chat.id
+        text = message.text
+        try:
+            if checkuser(chat_id):
+                msg = bot.send_message(chat_id, text="Kirimkan ID pengumuman yang ingin dihapus : ")
+                bot.register_next_step_handler(msg, self.getPengumuman)
+            else:
+                bot.send_message(chat_id, "Anda Bukan Admin")
+        except Exception as e:
+            logfunc("delete error", e)
+
+    def getPengumuman(self, message):
+        chat_id = message.chat.id
+        id_pengumuman = message.text
+        try:
+            with create_conn() as conn:
+                cursor = conn.cursor()
+                query = "SELECT isi_pengumuman.id_pengumuman, isi_pengumuman.isi, jurusan.nama_jur, prodi.nama_prod, isi_pengumuman.tingkat " \
+                        "FROM isi_pengumuman INNER JOIN jurusan ON isi_pengumuman.jurusan = jurusan.id_jur " \
+                        "INNER JOIN prodi ON isi_pengumuman.prodi=prodi.id_prodi " \
+                        f"WHERE isi_pengumuman.id_pengumuman = {id_pengumuman}"
+                cursor.execute(query)
+                data = cursor.fetchone()
+                id_pengumuman, isi, nama_jur, prodi, tingkat = data
+                text = f"ID Pengumuman: {id_pengumuman}\nJurusan : {nama_jur}\nProdi : {prodi}\nTingkat : {tingkat}\nIsi : \n{isi}\n" \
+                       f"Akan Dihapus?"
+                markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+                markup.add('ya', 'tidak')
+                msg = bot.send_message(chat_id,text)
+                bot.register_next_step_handler(msg, )
+        except Exception as e:
+            logfunc("Del GetPengumuman", e)
+
+    def commit_database(self, message):
+        chat_id = message.chat.id
+
+
 
 list_pengu = ListPengumuman()
 pengu = Pengumuman()
