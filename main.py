@@ -121,9 +121,33 @@ class Pengumuman:
             logfunc('commit database', e)
             bot.reply_to(message, 'oooops terjadi error silahkan lapor ke admin terjadi error silahkan lapor ke admin')
 
+class ListPengumuman:
+    def send_list(self, message):
+        chat_id = message.chat.id
+        try:
+            if checkuser(chat_id):
+                with create_conn() as conn:
+                    cursor = conn.cursor()
+                    query = "SELECT isi_pengumuman.isi, jurusan.nama_jur, prodi.nama_prod, isi_pengumuman.tingkat " \
+                            "FROM isi_pengumuman INNER JOIN jurusan ON isi_pengumuman.jurusan = jurusan.id_jur " \
+                            "INNER JOIN prodi ON isi_pengumuman.prodi=prodi.id_prodi"
+                    cursor.execute(query)
+                    list_data = cursor.fetchall()
+                    bot.send_message(chat_id,"Sedang mengambil data")
+                    for data in list_data:
+                        isi, nama_jur, prodi,tingkat = data
+                        text = f"Jurusan : {nama_jur}\nProdi : {prodi}\nTingkat : {tingkat}\nIsi : \n{isi}\n"
+                        bot.send_message(chat_id, text)
+            else:
+                bot.reply_to(message, "Anda Bukan Admin")
+        except Exception as e:
+            logfunc("info pengumuman", e)
+
+list_pengu = ListPengumuman()
 pengu = Pengumuman()
 
 bot.register_message_handler(pengu.first_step, commands=["start"])
+bot.register_message_handler(list_pengu.send_list, commands=["list"])
 
 
 print("BOT IS BERLARI")
