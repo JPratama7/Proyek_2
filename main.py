@@ -33,6 +33,9 @@ class DataPengumu:
         tanggal = self.tanggal
         return (id_peng,id_tele,isi,jurusan,prodi,tingkat,tanggal)
 
+    def setfromtuple(self, datatuple : tuple):
+        self.id_peng, self.id_tele, self.isi, self.jurusan, self.prodi, self.tingkat, self.tanggal = datatuple
+
 
 class Pengumuman:
     def first_step(self,message):
@@ -177,12 +180,12 @@ class DeletePengumuman:
             logfunc("delete error", e)
 
     def getPengumuman(self, message):
-        chat_id = message.chat.id
-        user = DataPengumu()
-        id_pengumuman = int(message.text)
-        user.id_peng = id_pengumuman
-        global_dict[chat_id] = user
         try:
+            chat_id = message.chat.id
+            user = DataPengumu()
+            id_pengumuman = int(message.text)
+            user.id_peng = id_pengumuman
+            global_dict[chat_id] = user
             with create_conn() as conn:
                 cursor = conn.cursor()
                 query = "SELECT isi_pengumuman.id_pengumuman, isi_pengumuman.isi, jurusan.nama_jur, prodi.nama_prod, isi_pengumuman.tingkat, user.nama, isi_pengumuman.tanggal " \
@@ -196,8 +199,8 @@ class DeletePengumuman:
                 if data is not None:
                     id_pengumuman, isi, nama_jur, prodi, tingkat, nama, tanggal = data
                     text = f"Nama Penulis : {nama}\nTanggal Pengingat : {tanggal}\nID Pengumuman: {id_pengumuman}\nJurusan : {nama_jur}\n" \
-                           f"Prodi : {prodi}\nTingkat : {tingkat}\nIsi : \n{isi}\n\n" \
-                           f"Akan Dihapus?"
+                            f"Prodi : {prodi}\nTingkat : {tingkat}\nIsi : \n{isi}\n\n" \
+                            f"Akan Dihapus?"
                     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
                     markup.add('ya', 'tidak')
                     msg = bot.send_message(chat_id,text, reply_markup=markup)
@@ -227,7 +230,7 @@ class DeletePengumuman:
             logfunc('commit database', e)
             bot.reply_to(message, 'oooops terjadi error silahkan lapor ke admin terjadi error silahkan lapor ke admin')
 
-# TODO :
+ # // TODO :
 # membuat handler update dengan memasukkan data fetch ke dalam class DataPengu
 # Kemudian membuat step by step untuk mengupdate data
 # ketika balasan dari user = 0 maka data didalam class tidak akan diubah
@@ -247,21 +250,19 @@ class UpdatePengumuman:
             logfunc("first step", e)
 
     def second_step(self, message):
-        chat_id = message.chat.id
-        text = message.text
         try:
+            chat_id = message.chat.id
+            text = message.text
+            user = DataPengumu()
             with create_conn() as conn:
                 cursor = conn.cursor()
-                # query =
+                cursor.execute(f"SELECT * FROM isi_pengumuman WHERE id_pengumuman = {text}")
+                data = cursor.fetchone()
+                user.setfromtuple(data)
 
-
-            chat_id = message.chat.id
-            isi = message.text
-            data = DataPengumu()
-            data.id_tele = chat_id
-            data.isi = isi
-            global_dict[chat_id] = data
-            msg = bot.reply_to(message, 'Jurusan: ')
+            global_dict[chat_id] = user
+            bot.send_message(chat_id, f"Isi Pengumuman : {user.isi}")
+            msg = bot.reply_to(message, 'Isi yang mau diganti : ')
             bot.register_next_step_handler(msg, self.third_step)
         except Exception as e:
             logfunc('nama', e)
@@ -270,10 +271,14 @@ class UpdatePengumuman:
     def third_step(self, message):
         try:
             chat_id = message.chat.id
-            jurusan = message.text
+            isi = message.text
             data = global_dict[chat_id]
-            data.jurusan = jurusan
-            msg = bot.reply_to(message, 'Prodi : ')
+            if isi in ["skip", "lewat"]:
+                pass
+            else:
+                data.isi = isi
+            bot.send_message(chat_id, f"Jurusan : {data.jurusan}")
+            msg = bot.reply_to(message, 'Jurusan yang ingin diganti : ')
             bot.register_next_step_handler(msg, self.forth_step)
         except Exception as e:
             logfunc("3Rd step Pengumuman", e)
@@ -281,31 +286,64 @@ class UpdatePengumuman:
     def forth_step(self, message):
         try:
             chat_id = message.chat.id
-            prodi = message.text
+            jurusan = message.text
             data = global_dict[chat_id]
-            data.prodi = prodi
-            msg = bot.reply_to(message, 'Tingkat : ')
+            if jurusan in ["skip", "lewat"]:
+                pass
+            else:
+                data.jurusan = jurusan
+
+            bot.send_message(chat_id, f"Prodi : {data.prodi}")
+            msg = bot.reply_to(message, 'Prodi yang ingin diganti : ')
             bot.register_next_step_handler(msg, self.fifth_step)
         except Exception as e:
             logfunc("5TH Pengumuman", e)
+            bot.register_next_step_handler(bot.reply_to(message, "Silahkan Isi Kembali"), self.forth_step)
 
     def fifth_step(self, message):
         try:
             chat_id = message.chat.id
-            tingkat = message.text
+            prodi = message.text
             data = global_dict[chat_id]
-            data.tingkat = tingkat
-            msg = bot.send_message(chat_id, "Waktu dengan format (DD/MM/YYYY HH:MM) :")
+            if prodi in ["skip", "lewat"]:
+                pass
+            else:
+                data.prodi = prodi
+
+            bot.send_message(chat_id, f"Tingkat : {data.tingkat}")
+            msg = bot.reply_to(message, 'Tingkat yang ingin diganti : ')
             bot.register_next_step_handler(msg, self.six_step)
         except Exception as e:
-            logfunc("FIFTH_STEP_DATE", e)
+            logfunc("5TH Pengumuman", e)
+            bot.register_next_step_handler(bot.reply_to(message, "Silahkan Isi Kembali"), self.fifth_step)
 
     def six_step(self, message):
         try:
             chat_id = message.chat.id
-            tanggal = converttodate(message.text)
+            tingkat = message.text
+            data = global_dict[chat_id]
+            if tingkat in ["skip", "lewat"]:
+                pass
+            else:
+                data.prodi = tingkat
+            bot.send_message(chat_id, f"Tanggal : {data.tanggal}")
+            msg = bot.reply_to(message, 'Tanggal yang ingin diganti : ')
+            bot.register_next_step_handler(msg, self.seven_step)
+        except Exception as e:
+            logfunc("5TH Pengumuman", e)
+            bot.register_next_step_handler(bot.reply_to(message, "Silahkan Isi Kembali"), self.seven_step)
+
+    def seven_step(self, message):
+        try:
+            chat_id = message.chat.id
+            tanggal = message.text
             data = global_dict[chat_id]
             data.tanggal = tanggal
+            if tanggal in ["skip", "lewat"]:
+                pass
+            else:
+                tanggal = converttodate(tanggal)
+                data.prodi = tanggal
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
             markup.add('ya', 'tidak')
             msg = bot.reply_to(message, f'Date-Time : {data.tanggal}\nJurusan : {data.jurusan}\n'
@@ -321,15 +359,32 @@ class UpdatePengumuman:
             chat_id = message.chat.id
             keputusan = message.text
             user = global_dict[chat_id]
+            # id_peng = randint(1000, 9999)
+            # id_tele = int
+            # isi = str
+            # jurusan = int
+            # prodi = int
+            # tingkat = int
+            # tanggal = str
+            print(user.getastuple())
+
+            # TODO:
+            #   fix QUERY FOR UPDATE
+            #
             if (keputusan == u'ya'):
-                insert = "INSERT INTO isi_pengumuman VALUES (%s,%s,%s,%s,%s,%s,%s)"
-                val = user.getastuple()
+                # insert = "UPDATE isi_pengumuman SET " \
+                #          f"isi = {user.isi}, jurusan = {user.jurusan}, " \
+                #          f"prodi = {user.prodi}, tingkat = {user.tingkat}," \
+                #          f"tanggal = {user.tanggal} WHERE id_pengumuman = {user.id_peng}"
+                insert = f"UPDATE `isi_pengumuman` SET `isi`={user.isi}," \
+                         f"`jurusan`={user.jurusan},`prodi`={user.prodi},`tingkat`={user.tingkat},`tanggal`={user.tanggal}" \
+                         f"WHERE `id_pengumuman` = {user.id_peng}"
                 try:
                     with create_conn() as conn:
                         cursor = conn.cursor()
-                        cursor.execute(insert, val)
+                        cursor.execute(insert)
                         conn.close()
-                    bot.send_message(chat_id, "ok data sudah terinput")
+                    bot.send_message(chat_id, "ok data sudah terupdate")
                 except Exception as e:
                     bot.send_message(chat_id, "terjadi error silahkan ulang kembali")
                     logfunc('commit database', e)
@@ -345,10 +400,12 @@ class UpdatePengumuman:
 list_pengu = ListPengumuman()
 pengu = Pengumuman()
 del_pengu = DeletePengumuman()
+up_pengu = UpdatePengumuman()
 
 bot.register_message_handler(pengu.first_step, commands=["start"])
 bot.register_message_handler(list_pengu.send_list, commands=["list"])
 bot.register_message_handler(del_pengu.deletePengumuman, commands=["del"])
+bot.register_message_handler(up_pengu.first_step, commands=["update"])
 
 
 print("BOT IS BERLARI")
