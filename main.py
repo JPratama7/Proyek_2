@@ -309,7 +309,6 @@ class UpdatePengumuman:
                 pass
             else:
                 data.prodi = prodi
-
             bot.send_message(chat_id, f"Tingkat : {data.tingkat}")
             msg = bot.reply_to(message, 'Tingkat yang ingin diganti : ')
             bot.register_next_step_handler(msg, self.six_step)
@@ -325,7 +324,7 @@ class UpdatePengumuman:
             if tingkat in ["skip", "lewat"]:
                 pass
             else:
-                data.prodi = tingkat
+                data.tingkat = tingkat
             bot.send_message(chat_id, f"Tanggal : {data.tanggal}")
             msg = bot.reply_to(message, 'Tanggal yang ingin diganti : ')
             bot.register_next_step_handler(msg, self.seven_step)
@@ -338,12 +337,11 @@ class UpdatePengumuman:
             chat_id = message.chat.id
             tanggal = message.text
             data = global_dict[chat_id]
-            data.tanggal = tanggal
             if tanggal in ["skip", "lewat"]:
                 pass
             else:
                 tanggal = converttodate(tanggal)
-                data.prodi = tanggal
+                data.tanggal = tanggal
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
             markup.add('ya', 'tidak')
             msg = bot.reply_to(message, f'Date-Time : {data.tanggal}\nJurusan : {data.jurusan}\n'
@@ -366,8 +364,6 @@ class UpdatePengumuman:
             # prodi = int
             # tingkat = int
             # tanggal = str
-            print(user.getastuple())
-
             # TODO:
             #   fix QUERY FOR UPDATE
             #
@@ -376,13 +372,14 @@ class UpdatePengumuman:
                 #          f"isi = {user.isi}, jurusan = {user.jurusan}, " \
                 #          f"prodi = {user.prodi}, tingkat = {user.tingkat}," \
                 #          f"tanggal = {user.tanggal} WHERE id_pengumuman = {user.id_peng}"
-                insert = f"UPDATE `isi_pengumuman` SET `isi`={user.isi}," \
-                         f"`jurusan`={user.jurusan},`prodi`={user.prodi},`tingkat`={user.tingkat},`tanggal`={user.tanggal}" \
-                         f"WHERE `id_pengumuman` = {user.id_peng}"
+                insert = f"UPDATE isi_pengumuman SET isi=%s," \
+                         f"jurusan=%s,prodi=%s,tingkat=%s,tanggal=%s " \
+                         f"WHERE id_pengumuman =%s"
+                val = (user.isi, user.jurusan, user.prodi, user.tingkat, str(user.tanggal), user.id_peng)
                 try:
                     with create_conn() as conn:
                         cursor = conn.cursor()
-                        cursor.execute(insert)
+                        cursor.execute(insert, val)
                         conn.close()
                     bot.send_message(chat_id, "ok data sudah terupdate")
                 except Exception as e:
