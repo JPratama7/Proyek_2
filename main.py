@@ -405,5 +405,14 @@ bot.register_message_handler(del_pengu.deletePengumuman, commands=["del"])
 bot.register_message_handler(up_pengu.first_step, commands=["update"])
 
 
+# while True:
+#
+#
+#     sleep(60)
+
+
+# auto_update(bot=bot)
+# bot.infinity_polling()
+# schedule.every(10).seconds.do(auto_update, bot=bot)
 print("BOT IS BERLARI")
-bot.infinity_polling()
+bot.polling()

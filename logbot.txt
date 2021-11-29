@@ -1,1 +1,29 @@
 DATABASE ERROR : name 'supabase' is not defined
+5TH PENGUMUMAN ERROR : 'Pengumuman' object has no attribute 'fifth_step'
+COMMIT DATABASE ERROR : 'str' object has no attribute 'strptime'
+COMMIT DATABASE ERROR : 1292 (22007): Incorrect datetime value: '19/10/2029 12:00' for column `pengumuman`.`isi_pengumuman`.`tanggal` at row 1
+COMMIT DATABASE ERROR : 'str' object has no attribute 'strptime'
+COMMIT DATABASE ERROR : 'str' object has no attribute 'strptime'
+COMMIT DATABASE ERROR : time data 'ya' does not match format '%d/%m/%Y %H:%M:%S'
+COMMIT DATABASE ERROR : time data '10/01/2029 1:01' does not match format '%d/%m/%Y %H:%M:%S'
+COMMIT DATABASE ERROR : time data '10/10/2090 10:10' does not match format '%d/%m/%Y %H:%M:%S'
+DEL GETPENGUMUMAN ERROR : cannot unpack non-iterable NoneType object
+DEL GETPENGUMUMAN ERROR : cannot unpack non-iterable NoneType object
+DEL GETPENGUMUMAN ERROR : cannot unpack non-iterable NoneType object
+3RD STEP PENGUMUMAN ERROR : 1201809639
+3RD STEP PENGUMUMAN ERROR : 1201809639
+NAMA ERROR : cannot unpack non-iterable NoneType object
+5TH PENGUMUMAN ERROR : 'DataPengumu' object has no attribute 'Tanggal'
+5TH PENGUMUMAN ERROR : 'DataPengumu' object has no attribute 'Tanggal'
+COMMIT DATABASE ERROR : 1265 (01000): Data truncated for column 'prodi' at row 1
+COMMIT DATABASE ERROR : Not all parameters were used in the SQL statement
+COMMIT DATABASE ERROR : time data '10/10/2099' does not match format '%d/%m/%Y %H:%M'
+COMMIT DATABASE ERROR : 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '01:00:00, tingkat = 1,tanggal = 10/10/2999 01:00 WHERE id_pengumuman = 4578' at line 1
+COMMIT DATABASE ERROR : 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '02:00:00,`tingkat`=1,`tanggal`=10/10/2999 02:00WHERE `id_pengumuman` = 4578' at line 1
+COMMIT DATABASE ERROR : 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '02:00:00,tingkat=1,tanggal=10/10/2999 02:00 WHERE id_pengumuman = 4578' at line 1
+COMMIT DATABASE ERROR : Not enough parameters for the SQL statement
+COMMIT DATABASE ERROR : Not enough parameters for the SQL statement
+COMMIT DATABASE ERROR : Not enough parameters for the SQL statement
+DB CONN NOT CREATED ERROR : 2013 (HY000): Lost connection to MySQL server at 'reading initial communication packet', system error: 104
+COMMIT DATABASE ERROR : 1366 (22007): Incorrect integer value: 'D4 TEKNIK INFORMATIKA' for column `pengumuman`.`isi_pengumuman`.`jurusan` at row 1
+COMMIT DATABASE ERROR : time data '20/10/2021' does not match format '%d/%m/%Y %H:%M'
