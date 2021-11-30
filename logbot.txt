@@ -27,3 +27,12 @@ COMMIT DATABASE ERROR : Not enough parameters for the SQL statement
 DB CONN NOT CREATED ERROR : 2013 (HY000): Lost connection to MySQL server at 'reading initial communication packet', system error: 104
 COMMIT DATABASE ERROR : 1366 (22007): Incorrect integer value: 'D4 TEKNIK INFORMATIKA' for column `pengumuman`.`isi_pengumuman`.`jurusan` at row 1
 COMMIT DATABASE ERROR : time data '20/10/2021' does not match format '%d/%m/%Y %H:%M'
+DB CONN NOT CREATED ERROR : 2003 (HY000): Can't connect to MySQL server on 'localhost:3306' (111)
+COMMIT DATABASE ERROR : time data '9999999' does not match format '%d/%m/%Y %H:%M'
+COMMIT DATABASE ERROR : time data '9999999' does not match format '%d/%m/%Y %H:%M'
+COMMIT DATABASE ERROR : time data '99999999' does not match format '%d/%m/%Y %H:%M'
+COMMIT DATABASE ERROR : time data '9999999' does not match format '%d/%m/%Y %H:%M'
+COMMIT DATABASE ERROR : 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`pengumuman`.`isi_pengumuman`, CONSTRAINT `FK JURUSAN` FOREIGN KEY (`jurusan`) REFERENCES `jurusan` (`id_jur`))
+COMMIT DATABASE ERROR : 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`pengumuman`.`isi_pengumuman`, CONSTRAINT `FK JURUSAN` FOREIGN KEY (`jurusan`) REFERENCES `jurusan` (`id_jur`))
+COMMIT DATABASE ERROR : 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`pengumuman`.`isi_pengumuman`, CONSTRAINT `FK JURUSAN` FOREIGN KEY (`jurusan`) REFERENCES `jurusan` (`id_jur`))
+COMMIT DATABASE ERROR : first_step() missing 1 required positional argument: 'message'

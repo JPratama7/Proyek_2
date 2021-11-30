@@ -113,6 +113,8 @@ class Pengumuman:
         except Exception as e:
             logfunc('commit database', e)
             bot.reply_to(message, 'oooops terjadi error silahkan lapor ke admin terjadi error silahkan lapor ke admin')
+            msg = bot.reply_to(message, "Silahkan masukkan sesuai format")
+            bot.register_next_step_handler(msg, self.six_step)
 
     def commit_to_database(self,message):
         try:
@@ -131,6 +133,7 @@ class Pengumuman:
                 except Exception as e:
                     bot.send_message(chat_id, "terjadi error silahkan ulang kembali")
                     logfunc('commit database', e)
+                    self.first_step()
             else:
                 msg = bot.send_message(chat_id, "Silahkan tekan -> /daftar untuk melakukan pendaftaran ulang")
                 bot.register_next_step_handler(msg, self.first_step)
@@ -138,7 +141,6 @@ class Pengumuman:
             del global_dict[chat_id]
         except Exception as e:
             logfunc('commit database', e)
-            bot.reply_to(message, 'oooops terjadi error silahkan lapor ke admin terjadi error silahkan lapor ke admin')
 
 class ListPengumuman:
     def send_list(self, message):
@@ -273,7 +275,7 @@ class UpdatePengumuman:
             chat_id = message.chat.id
             isi = message.text
             data = global_dict[chat_id]
-            if isi in ["skip", "lewat"]:
+            if str(isi).lower() in ["skip", "lewat"]:
                 pass
             else:
                 data.isi = isi
@@ -288,7 +290,7 @@ class UpdatePengumuman:
             chat_id = message.chat.id
             jurusan = message.text
             data = global_dict[chat_id]
-            if jurusan in ["skip", "lewat"]:
+            if str(jurusan).lower() in ["skip", "lewat"]:
                 pass
             else:
                 data.jurusan = jurusan
@@ -305,7 +307,7 @@ class UpdatePengumuman:
             chat_id = message.chat.id
             prodi = message.text
             data = global_dict[chat_id]
-            if prodi in ["skip", "lewat"]:
+            if str(prodi).lower() in ["skip", "lewat"]:
                 pass
             else:
                 data.prodi = prodi
@@ -321,7 +323,7 @@ class UpdatePengumuman:
             chat_id = message.chat.id
             tingkat = message.text
             data = global_dict[chat_id]
-            if tingkat in ["skip", "lewat"]:
+            if str(tingkat).lower() in ["skip", "lewat"]:
                 pass
             else:
                 data.tingkat = tingkat
@@ -337,7 +339,7 @@ class UpdatePengumuman:
             chat_id = message.chat.id
             tanggal = message.text
             data = global_dict[chat_id]
-            if tanggal in ["skip", "lewat"]:
+            if str(tanggal).lower() in ["skip", "lewat"]:
                 pass
             else:
                 tanggal = converttodate(tanggal)
@@ -404,15 +406,6 @@ bot.register_message_handler(list_pengu.send_list, commands=["list"])
 bot.register_message_handler(del_pengu.deletePengumuman, commands=["del"])
 bot.register_message_handler(up_pengu.first_step, commands=["update"])
 
-
-# while True:
-#
-#
-#     sleep(60)
-
-
-# auto_update(bot=bot)
-# bot.infinity_polling()
-# schedule.every(10).seconds.do(auto_update, bot=bot)
 print("BOT IS BERLARI")
 bot.polling()
+

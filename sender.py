@@ -20,6 +20,7 @@ bool = True if HOST != "" and USER != "" and DATABASE != "" and TOKEN != "" else
 if __name__ == "__main__":
     if bool:
         print(f"Current TimeZone : {datetime.utcnow().astimezone().tzinfo}")
+        print("Starting Reminder")
         while 1:
             noow = datetime.now().strftime("%Y-%m-%d %H:%M")
             with create_conn() as conn:
@@ -36,12 +37,15 @@ if __name__ == "__main__":
                     data = cursor.fetchall()
                     tele_id = [tele[0] for tele in data]
                     print(tele_id)
-                    while len(tele_id) != 0:
-                        for teleg in tele_id:
-                            print("Message Found.... Sending")
+                    for teleg in tele_id:
+                        print("Message Found.... Sending")
+                        try:
                             bot.send_message(int(teleg), str(result_set[3]))
-                            tele_id.remove(teleg)
-                            print(tele_id)
+                        except Exception as e:
+                            print("User Belum mengechat ke bot.... Skipping")
+                        tele_id.remove(teleg)
+                        print(tele_id)
+
                     sleep(60)
 
 
