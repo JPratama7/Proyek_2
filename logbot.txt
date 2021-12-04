@@ -36,3 +36,4 @@ COMMIT DATABASE ERROR : 1452 (23000): Cannot add or update a child row: a foreig
 COMMIT DATABASE ERROR : 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`pengumuman`.`isi_pengumuman`, CONSTRAINT `FK JURUSAN` FOREIGN KEY (`jurusan`) REFERENCES `jurusan` (`id_jur`))
 COMMIT DATABASE ERROR : 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`pengumuman`.`isi_pengumuman`, CONSTRAINT `FK JURUSAN` FOREIGN KEY (`jurusan`) REFERENCES `jurusan` (`id_jur`))
 COMMIT DATABASE ERROR : first_step() missing 1 required positional argument: 'message'
+NAMA ERROR : sequence item 0: expected str instance, int found

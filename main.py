@@ -10,8 +10,39 @@ from random import randint
 load_dotenv()
 TOKEN = os.getenv('API')
 bot = TeleBot(TOKEN)
-
 global_dict = {}
+
+
+text_jurusan = []
+text_prodi = []
+
+dict_jurusan = {}
+dict_prodi = {}
+
+def get_jurusan():
+    print("Mengambil Data Jurusan")
+    with create_conn() as conn:
+        cursor = conn.cursor()
+        cursor.execute("select * from jurusan")
+        data = cursor.fetchall()
+        for i in data:
+            dict_jurusan[i[0]] = i[1]
+            msg = f"{i[0]} {i[1]}"
+            text_jurusan.append(msg)
+
+
+def get_prodi():
+    print("Mengambil Data Prodi")
+    with create_conn() as conn:
+        cursor = conn.cursor()
+        cursor.execute("select * from prodi")
+        data = cursor.fetchall()
+        for i in data:
+            dict_prodi[i[0]] = i[1]
+            msg = f"{i[0]} {i[1]}"
+            text_prodi.append(msg)
+
+
 
 @dataclass
 class DataPengumu:
@@ -37,7 +68,7 @@ class DataPengumu:
         self.id_peng, self.id_tele, self.isi, self.jurusan, self.prodi, self.tingkat, self.tanggal = datatuple
 
 
-class Pengumuman:
+class InsertPengumuman:
     def first_step(self,message):
         chat_id = int(message.chat.id)
         try:
@@ -59,7 +90,8 @@ class Pengumuman:
             data.id_tele = chat_id
             data.isi = isi
             global_dict[chat_id] = data
-            msg = bot.reply_to(message, 'Jurusan: ')
+            pesan = "\n".join(text_jurusan)
+            msg = bot.reply_to(message, f'{pesan}\n\nJurusan: ')
             bot.register_next_step_handler(msg, self.third_step)
         except Exception as e:
             logfunc('nama', e)
@@ -68,34 +100,52 @@ class Pengumuman:
     def third_step(self,message):
         try:
             chat_id = message.chat.id
-            jurusan = message.text
-            data = global_dict[chat_id]
-            data.jurusan = jurusan
-            msg = bot.reply_to(message, 'Prodi : ')
-            bot.register_next_step_handler(msg, self.forth_step)
+            jurusan = int(message.text)
+            if jurusan not in dict_jurusan:
+                msg = bot.send_message(chat_id=chat_id, text="Silahkan isi sesuai id jurusan")
+                bot.register_next_step_handler(msg, self.third_step)
+            else:
+                data = global_dict[chat_id]
+                data.jurusan = jurusan
+                pesan = "\n".join(text_prodi)
+                msg = bot.reply_to(message, f'{pesan}\n\nProdi : ')
+                bot.register_next_step_handler(msg, self.forth_step)
         except Exception as e:
+            msg = bot.send_message(chat_id=chat_id, text="Silahkan isi sesuai input")
+            bot.register_next_step_handler(msg, self.third_step)
             logfunc("3Rd step Pengumuman", e)
 
     def forth_step(self, message):
         try:
             chat_id = message.chat.id
-            prodi = message.text
-            data = global_dict[chat_id]
-            data.prodi = prodi
-            msg = bot.reply_to(message, 'Tingkat : ')
-            bot.register_next_step_handler(msg, self.fifth_step)
+            prodi = int(message.text)
+            if prodi not in dict_prodi:
+                msg = bot.send_message(chat_id=chat_id, text="Silahkan isi sesuai id Prodi")
+                bot.register_next_step_handler(msg, self.third_step)
+            else:
+                data = global_dict[chat_id]
+                data.prodi = prodi
+                msg = bot.reply_to(message, 'Tingkat : ')
+                bot.register_next_step_handler(msg, self.fifth_step)
         except Exception as e:
+            msg = bot.send_message(chat_id=chat_id, text="Silahkan isi sesuai input")
+            bot.register_next_step_handler(msg, self.forth_step)
             logfunc("5TH Pengumuman", e)
 
     def fifth_step(self, message):
         try:
             chat_id = message.chat.id
-            tingkat = message.text
-            data = global_dict[chat_id]
-            data.tingkat = tingkat
-            msg = bot.send_message(chat_id, "Waktu dengan format (DD/MM/YYYY HH:MM) :")
-            bot.register_next_step_handler(msg, self.six_step)
+            tingkat = int(message.text)
+            if tingkat not in [1,2,3,4]:
+                bot.send_message(chat_id=chat_id, text="Tingkat yang tersedia hanya 1 sampai 4")
+            else:
+                data = global_dict[chat_id]
+                data.tingkat = tingkat
+                msg = bot.send_message(chat_id, "Waktu dengan format (DD/MM/YYYY HH:MM) :")
+                bot.register_next_step_handler(msg, self.six_step)
         except Exception as e:
+            msg = bot.send_message(chat_id=chat_id, text="Silahkan masukkan sesuai input")
+            bot.register_next_step_handler(msg, self.fifth_step)
             logfunc("FIFTH_STEP_DATE", e)
 
 
@@ -113,7 +163,7 @@ class Pengumuman:
         except Exception as e:
             logfunc('commit database', e)
             bot.reply_to(message, 'oooops terjadi error silahkan lapor ke admin terjadi error silahkan lapor ke admin')
-            msg = bot.reply_to(message, "Silahkan masukkan sesuai format")
+            msg = bot.reply_to(message, "Silahkan masukkan sesuai format (DD/MM/YYYY HH:MM)")
             bot.register_next_step_handler(msg, self.six_step)
 
     def commit_to_database(self,message):
@@ -133,7 +183,6 @@ class Pengumuman:
                 except Exception as e:
                     bot.send_message(chat_id, "terjadi error silahkan ulang kembali")
                     logfunc('commit database', e)
-                    self.first_step()
             else:
                 msg = bot.send_message(chat_id, "Silahkan tekan -> /daftar untuk melakukan pendaftaran ulang")
                 bot.register_next_step_handler(msg, self.first_step)
@@ -291,13 +340,18 @@ class UpdatePengumuman:
             jurusan = message.text
             data = global_dict[chat_id]
             if str(jurusan).lower() in ["skip", "lewat"]:
-                pass
+                bot.send_message(chat_id, f"Prodi : {data.prodi}")
+                msg = bot.reply_to(message, 'Prodi yang ingin diganti : ')
+                bot.register_next_step_handler(msg, self.fifth_step)
+            elif int(jurusan) not in dict_jurusan:
+                pesan = "\n".join(text_jurusan)
+                msg = bot.send_message(chat_id=chat_id, text=f"{pesan}\n\nTidak sesuai jurusan")
+                bot.register_next_step_handler(msg, self.forth_step)
             else:
                 data.jurusan = jurusan
-
-            bot.send_message(chat_id, f"Prodi : {data.prodi}")
-            msg = bot.reply_to(message, 'Prodi yang ingin diganti : ')
-            bot.register_next_step_handler(msg, self.fifth_step)
+                bot.send_message(chat_id, f"Prodi : {data.prodi}")
+                msg = bot.reply_to(message, 'Prodi yang ingin diganti : ')
+                bot.register_next_step_handler(msg, self.fifth_step)
         except Exception as e:
             logfunc("5TH Pengumuman", e)
             bot.register_next_step_handler(bot.reply_to(message, "Silahkan Isi Kembali"), self.forth_step)
@@ -308,12 +362,18 @@ class UpdatePengumuman:
             prodi = message.text
             data = global_dict[chat_id]
             if str(prodi).lower() in ["skip", "lewat"]:
-                pass
+                bot.send_message(chat_id, f"Tingkat : {data.tingkat}")
+                msg = bot.reply_to(message, 'Tingkat yang ingin diganti : ')
+                bot.register_next_step_handler(msg, self.six_step)
+            elif int(prodi) not in dict_prodi:
+                pesan = "\n".join(text_prodi)
+                msg = bot.send_message(chat_id=chat_id, text=f"{pesan}\n\n Tidak sesuai Prodi")
+                bot.register_next_step_handler(msg, self.fifth_step)
             else:
                 data.prodi = prodi
-            bot.send_message(chat_id, f"Tingkat : {data.tingkat}")
-            msg = bot.reply_to(message, 'Tingkat yang ingin diganti : ')
-            bot.register_next_step_handler(msg, self.six_step)
+                bot.send_message(chat_id, f"Tingkat : {data.tingkat}")
+                msg = bot.reply_to(message, 'Tingkat yang ingin diganti : ')
+                bot.register_next_step_handler(msg, self.six_step)
         except Exception as e:
             logfunc("5TH Pengumuman", e)
             bot.register_next_step_handler(bot.reply_to(message, "Silahkan Isi Kembali"), self.fifth_step)
@@ -324,15 +384,20 @@ class UpdatePengumuman:
             tingkat = message.text
             data = global_dict[chat_id]
             if str(tingkat).lower() in ["skip", "lewat"]:
-                pass
+                bot.send_message(chat_id, f"Tanggal : {data.tanggal}")
+                msg = bot.reply_to(message, 'Tanggal yang ingin diganti : ')
+                bot.register_next_step_handler(msg, self.seven_step)
+            elif int(tingkat) not in [1,2,3,4]:
+                msg = bot.send_message(chat_id=chat_id, text=f"Tingkat yang tersedia hanya 1 sampai 4")
+                bot.register_next_step_handler(msg, self.six_step)
             else:
                 data.tingkat = tingkat
-            bot.send_message(chat_id, f"Tanggal : {data.tanggal}")
-            msg = bot.reply_to(message, 'Tanggal yang ingin diganti : ')
-            bot.register_next_step_handler(msg, self.seven_step)
+                bot.send_message(chat_id, f"Tanggal : {data.tanggal}")
+                msg = bot.reply_to(message, 'Tanggal yang ingin diganti : ')
+                bot.register_next_step_handler(msg, self.seven_step)
         except Exception as e:
             logfunc("5TH Pengumuman", e)
-            bot.register_next_step_handler(bot.reply_to(message, "Silahkan Isi Kembali"), self.seven_step)
+            bot.register_next_step_handler(bot.reply_to(message, "Silahkan Isi Kembali"), self.six_step)
 
     def seven_step(self, message):
         try:
@@ -397,7 +462,7 @@ class UpdatePengumuman:
             bot.reply_to(message, 'oooops terjadi error silahkan lapor ke admin terjadi error silahkan lapor ke admin')
 
 list_pengu = ListPengumuman()
-pengu = Pengumuman()
+pengu = InsertPengumuman()
 del_pengu = DeletePengumuman()
 up_pengu = UpdatePengumuman()
 
@@ -406,6 +471,10 @@ bot.register_message_handler(list_pengu.send_list, commands=["list"])
 bot.register_message_handler(del_pengu.deletePengumuman, commands=["del"])
 bot.register_message_handler(up_pengu.first_step, commands=["update"])
 
-print("BOT IS BERLARI")
-bot.polling()
+
+if __name__=='__main__':
+    get_prodi()
+    get_jurusan()
+    print("BOT IS BERLARI")
+    bot.polling()
 
