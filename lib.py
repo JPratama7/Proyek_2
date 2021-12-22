@@ -1,15 +1,24 @@
 import os
 
+import pytz
 from mysql import connector
 from dotenv import load_dotenv
 from datetime import datetime
-from time import sleep
+from pytz import timezone
+
 
 load_dotenv()
 host = os.environ.get("HOST")
 user = "root"
 password = os.environ.get("PASSWORD")
 database = os.environ.get("DATABASE")
+
+
+
+# Variables for timezone
+timezone_dict = {"WIB": "Asia/Jakarta", "WITA": "Asia/Makassar", "WIT": "Asia/Jayapura"}
+format_time = '%d/%m/%Y %H:%M'
+
 
 def logfunc(type : str, e : Exception):
     type = str(type).upper()
@@ -36,29 +45,58 @@ def checkuser(telegramid : int):
         else:
             return False
 
-def converttodate(tanggal:str):
-    date_time = datetime.strptime(tanggal,'%d/%m/%Y %H:%M')
+
+# a function convert datetime timezone to UTC
+def convert_to_utc(date_time : "Datetime object"):
+    if not isinstance(date_time, datetime):
+        date_time = datetime.strptime(date_time, format_time)
+
+    date_time = date_time.astimezone(pytz.UTC).strftime(format_time)
+    date_time = datetime.strptime(date_time, format_time)
     return date_time
 
-def auto_update(bot):
-    noow = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+# a fucntion convert UTC to timezone
+def convert_to_usertz(date_time : "Datetime object", user_timezone : "Destination Timezone"):
+    tz_user = timezone(timezone_dict.get(user_timezone))
+    if not isinstance(date_time, datetime):
+        date_time = converttodate(date_time)
+        date_time = pytz.utc.localize(date_time).astimezone(tz_user).strftime(format_time)
+    date_time = date_time.astimezone(tz_user).strftime(format_time)
+    # date_time = date_time.astimezone(timezone(tz_user)).strftime(format_time)
+    return date_time
+
+def check_wib():
+    print(datetime.now(timezone('Asia/Jakarta')))
+    date = convert_to_utc(datetime.now(timezone('Asia/Jakarta')))
     with create_conn() as conn:
         cursor = conn.cursor()
-        query = "SELECT jurusan, prodi, tingkat, isi FROM isi_pengumuman WHERE tanggal = %s "  #
-        val = (noow,)
-        cursor.execute(query, val)  #
-        result_set = cursor.fetchone()
-        if result_set != None:
-            # for i in result_set:
-            get = f"SELECT id_tele FROM siswa WHERE jurusan = {result_set[0]} AND prodi = {result_set[1]} " \
-                  f"AND tingkat = {result_set[2]}"
-            cursor.execute(get)
-            data = cursor.fetchall()
-            tele_id = [tele[0] for tele in data]
-            print(tele_id)
-            while len(tele_id) != 0:
-                for teleg in tele_id:
-                    print("Message Found.... Sending")
-                    bot.send_message(int(teleg), str(result_set[3]))
-                    tele_id.remove(teleg)
-                    print(tele_id)
+        query = "SELECT ip.isi, ip.id_user, ip.jurusan, ip.prodi, ip.tingkat, s.tz FROM isi_pengumuman ip INNER JOIN siswa s on ip.jurusan = s.jurusan WHERE tz = %s"
+        val = ("WIB",)
+        cursor.execute(query, val)
+        data = cursor.fetchall()
+        print(data)
+
+
+def check_wita():
+    print(datetime.now(timezone('Asia/Makassar')))
+    date = convert_to_utc(datetime.now(timezone('Asia/Makassar')))
+    with create_conn() as conn:
+        cursor = conn.cursor()
+        query = "SELECT isi, id_user,jurusan,prodi,tingkat FROM isi_pengumuman WHERE tanggal = %s"
+        val = (date,)
+        cursor.execute(query, val)
+        data = cursor.fetchall()
+        return data
+
+
+def check_wit():
+    print(datetime.now(timezone('Asia/Jayapura')))
+    date = convert_to_utc(datetime.now(timezone(timezone_dict.get("WIT"))))
+    with create_conn() as conn:
+        cursor = conn.cursor()
+        query = "SELECT isi, id_user,jurusan,prodi,tingkat FROM isi_pengumuman WHERE tanggal = %s"
+        val = (date,)
+        cursor.execute(query, val)
+        data = cursor.fetchall()
+        return data

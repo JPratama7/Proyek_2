@@ -3,7 +3,7 @@ import os
 from telebot import TeleBot, types
 from dotenv import load_dotenv
 from dataclasses import dataclass
-from lib import checkuser, logfunc, create_conn, converttodate
+from lib import checkuser, logfunc, create_conn, convert_to_utc
 from random import randint
 
 # Global Variable
@@ -152,12 +152,12 @@ class InsertPengumuman:
     def six_step(self, message):
         try:
             chat_id = message.chat.id
-            tanggal = converttodate(message.text)
+            tanggal = convert_to_utc(message.text)
             data = global_dict[chat_id]
             data.tanggal = tanggal
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
             markup.add('ya', 'tidak')
-            msg = bot.reply_to(message, f'Date-Time : {data.tanggal}\nJurusan : {data.jurusan}\n'
+            msg = bot.reply_to(message, f'Date-time (UTC) : {data.tanggal}\nJurusan : {data.jurusan}\n'
                                         f'Prodi : {data.prodi}\nTingkat : {data.tingkat}\nIsi: {data.isi}\n', reply_markup=markup)
             bot.register_next_step_handler(msg, self.commit_to_database)
         except Exception as e:
@@ -407,17 +407,18 @@ class UpdatePengumuman:
             if str(tanggal).lower() in ["skip", "lewat"]:
                 pass
             else:
-                tanggal = converttodate(tanggal)
+                tanggal = convert_to_utc(tanggal)
                 data.tanggal = tanggal
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
             markup.add('ya', 'tidak')
-            msg = bot.reply_to(message, f'Date-Time : {data.tanggal}\nJurusan : {data.jurusan}\n'
+            msg = bot.reply_to(message, f'Date-time (UTC) : {data.tanggal}\nJurusan : {data.jurusan}\n'
                                         f'Prodi : {data.prodi}\nTingkat : {data.tingkat}\nIsi: {data.isi}\n',
                                reply_markup=markup)
             bot.register_next_step_handler(msg, self.commit_to_database)
         except Exception as e:
             logfunc('commit database', e)
-            bot.reply_to(message, 'oooops terjadi error silahkan lapor ke admin terjadi error silahkan lapor ke admin')
+            msg = bot.reply_to(message, 'Format tidak sesuai, silahkan isi kembali')
+            bot.register_next_step_handler(msg, self.seven_step)
 
     def commit_to_database(self, message):
         try:
@@ -453,8 +454,7 @@ class UpdatePengumuman:
                     bot.send_message(chat_id, "terjadi error silahkan ulang kembali")
                     logfunc('commit database', e)
             else:
-                msg = bot.send_message(chat_id, "Silahkan tekan -> /daftar untuk melakukan pendaftaran ulang")
-                bot.register_next_step_handler(msg, self.first_step)
+                bot.send_message(chat_id, "Silahkan tekan -> /update untuk melakukan update data")
             # remove used object at user_dict
             del global_dict[chat_id]
         except Exception as e:

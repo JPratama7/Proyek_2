@@ -37,3 +37,9 @@ COMMIT DATABASE ERROR : 1452 (23000): Cannot add or update a child row: a foreig
 COMMIT DATABASE ERROR : 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`pengumuman`.`isi_pengumuman`, CONSTRAINT `FK JURUSAN` FOREIGN KEY (`jurusan`) REFERENCES `jurusan` (`id_jur`))
 COMMIT DATABASE ERROR : first_step() missing 1 required positional argument: 'message'
 NAMA ERROR : sequence item 0: expected str instance, int found
+COMMIT DATABASE ERROR : time data '10/12/2021 16;34' does not match format '%d/%m/%Y %H:%M'
+COMMIT DATABASE ERROR : time data '10/12/2021 16;34' does not match format '%d/%m/%Y %H:%M'
+COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '7242' for key 'PRIMARY'
+COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '7242' for key 'PRIMARY'
+DB CONN NOT CREATED ERROR : 2003: Can't connect to MySQL server on 'localhost:3306' (111 Connection refused)
+COMMIT DATABASE ERROR : time data '2021-12-23 23:08:00' does not match format '%d/%m/%Y %H:%M'
