@@ -2,9 +2,10 @@ import os
 
 from dotenv import load_dotenv
 from datetime import datetime
-from lib import create_conn
+from lib import create_conn, timezone_dict, convert_to_utc
 from time import sleep
 from telebot import TeleBot
+from pytz import timezone
 
 load_dotenv()
 
@@ -13,21 +14,25 @@ USER = "root"
 PASS = os.getenv("PASSWORD")
 DATABASE = os.getenv("DATABASE")
 TOKEN = os.getenv('API')
+TZ_ENV = os.getenv('TIMEZONE')
+
+
 bot = TeleBot(TOKEN)
-bool = True if HOST != "" and USER != "" and DATABASE != "" and TOKEN != "" else False
+tz = timezone_dict.get(TZ_ENV)
+bool = True if HOST != "" and USER != "" and DATABASE != "" and TOKEN != "" and TZ_ENV != "" else False
 
 
 if __name__ == "__main__":
     if bool:
-        print(f"Current TimeZone : {datetime.utcnow().astimezone().tzinfo}")
+        print(f"Current TimeZone : {tz}")
         print("Starting Reminder")
         while 1:
-            noow = datetime.now().strftime("%Y-%m-%d %H:%M")
+            noow = convert_to_utc(datetime.now(timezone(tz)))
             with create_conn() as conn:
                 cursor = conn.cursor()
-                query = "SELECT jurusan, prodi, tingkat, isi FROM isi_pengumuman WHERE tanggal = %s " #
+                query = "SELECT jurusan, prodi, tingkat, isi FROM isi_pengumuman WHERE tanggal = %s"
                 val = (noow,)
-                cursor.execute(query, val) #
+                cursor.execute(query, val)
                 result_set = cursor.fetchone()
                 if result_set != None:
                     # for i in result_set:
