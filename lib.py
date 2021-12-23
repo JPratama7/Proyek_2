@@ -45,6 +45,18 @@ def checkuser(telegramid : int):
         else:
             return False
 
+def checksiswa(telegramid : int):
+    with create_conn() as conn:
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT COUNT(*) FROM siswa WHERE id_tele ={telegramid}")
+        user = cursor.fetchone()
+        print(user)
+        cursor.close()
+        if user[0] != 0:
+            return False
+        else:
+            return True
+
 
 # a function convert datetime timezone to UTC
 def convert_to_utc(date_time : "Datetime object"):
