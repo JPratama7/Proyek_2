@@ -43,3 +43,7 @@ COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '7242' for key 'PRIMARY'
 COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '7242' for key 'PRIMARY'
 DB CONN NOT CREATED ERROR : 2003: Can't connect to MySQL server on 'localhost:3306' (111 Connection refused)
 COMMIT DATABASE ERROR : time data '2021-12-23 23:08:00' does not match format '%d/%m/%Y %H:%M'
+NAMA ERROR : 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '/insert' at line 1
+COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '1956' for key 'PRIMARY'
+NAMA ERROR : 1054 (42S22): Unknown column 'skip' in 'where clause'
+COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '6922' for key 'PRIMARY'

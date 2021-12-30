@@ -7,3 +7,4 @@ lib_no.py
 .idea/*
 __pycache__/*
 .env
+logbot.txt

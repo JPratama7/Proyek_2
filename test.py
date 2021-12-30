@@ -1,42 +1,23 @@
-from mysql import connector
-import os
+from lib import convert_utc_to_usertz, convert_to_utc, checksiswa, checkuser
 from datetime import datetime
-from lib import create_conn
+from pytz import timezone
 
-# host = os.environ.get("HOST")
-# user = "root"
-# password = os.environ.get("PASSWORD")
-# database = "pengumuman"
-#
-# conn = connector.connect(host=host, user=user, password=password, database=database, autocommit=True)
-# cursor = conn.cursor()
-#
-# id_tele = int(1201809639)
-# query = f"SELECT * FROM user WHERE id_tele={id_tele}"
-#
-# data = cursor.execute(query)
+format_time = '%d/%m/%Y %H:%M'
 
-# date_time_str = "18/09/2020 01:55:19"
-# print(type(date_time_str))
-#
-# date_time_obj = datetime.strptime(date_time_str, '%d/%m/%Y %H:%M:%S')
-#
-#
-# print ("The type of the date is now",  type(date_time_obj))
-# print ("The date is", date_time_obj)
-dict_jurusan = {}
+def test_convert_to_utc():
+    assert convert_to_utc(datetime.now(timezone('Asia/Jakarta'))).strftime(format_time) == datetime.utcnow().strftime(format_time)
 
-print("Mengambil ID Jurusan")
-with create_conn() as conn:
-    cursor = conn.cursor()
-    cursor.execute("select * from jurusan")
-    data = cursor.fetchall()
-    for i in data:
-        dict_jurusan[i[0]] = i[1]
+def test_convert_utc_to_usertz():
+    assert convert_utc_to_usertz(datetime.utcnow().strftime(format_time), "WIB") == datetime.now(timezone('Asia/Jakarta')).strftime(format_time)
 
-print(dict_jurusan)
-k = 1
-if k in dict_jurusan:
-    print("bernar")
-else:
-    print("c")
+def test_siswa_success():
+    assert checksiswa(1201809639) == True
+
+def test_siswa_fail():
+    assert checksiswa(1234567890) == False
+
+def test_checkuser_success():
+    assert checkuser(1201809639) == True
+
+def test_checkuser_fail():
+    assert checkuser(1255213541) == False
