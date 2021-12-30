@@ -41,18 +41,14 @@ if __name__ == "__main__":
                     cursor.execute(get)
                     data = cursor.fetchall()
                     tele_id = [tele[0] for tele in data]
-                    print(tele_id)
-                    for teleg in tele_id:
-                        print("Message Found.... Sending")
+                    for tele in tele_id:
                         try:
-                            bot.send_message(int(teleg), str(result_set[3]))
-                        except Exception as e:
-                            print("User Belum mengechat ke bot.... Skipping")
-                        tele_id.remove(teleg)
-                        print(tele_id)
-
+                            bot.send_message(tele, result_set[3])
+                            print(f"Sending to {tele}")
+                        except:
+                            print(f"Failed to send to {tele}")
+                    tele_id.clear()
                     sleep(60)
-
 
     else:
         print("Silahkan isi ENV file")

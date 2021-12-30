@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from dataclasses import dataclass
 from lib import checkuser, logfunc, create_conn, convert_to_utc, checksiswa, convert_utc_to_usertz
 from random import randint
+from signal import signal
 
 # Global Variable
 load_dotenv()
@@ -70,16 +71,18 @@ class DataPengumu:
 @dataclass
 class User:
     id_tele = int
+    nama = str
     jurusan = int
     prodi = int
     tingkat = int
 
     def getastuple(self):
         id_tele = self.id_tele
+        nama = self.nama
         jurusan = self.jurusan
         prodi = self.prodi
         tingkat = self.tingkat
-        return (id_tele, jurusan, prodi, tingkat)
+        return (id_tele, nama, jurusan, prodi, tingkat)
 
     def setfromtuple(self, datatuple: tuple):
         self.id_tele, self.jurusan, self.prodi, self.tingkat = datatuple
@@ -122,8 +125,10 @@ class InsertPengumuman:
                 bot.send_message(chat_id, "Input salah, silahkan input angka"), self.third_step
             )
             if jurusan not in dict_jurusan:
-                msg = bot.send_message(chat_id=chat_id, text="Silahkan isi sesuai id jurusan")
-                bot.register_next_step_handler(msg, self.third_step)
+                bot.register_next_step_handler(
+                    bot.send_message(chat_id=chat_id, text="Silahkan isi sesuai id jurusan"),
+                    self.third_step
+                )
             else:
                 data = global_dict[chat_id]
                 data.jurusan = jurusan
@@ -214,7 +219,7 @@ class InsertPengumuman:
                 bot.send_message(chat_id, "ok data sudah terinput")
             else:
                 bot.register_next_step_handler(
-                    bot.send_message(chat_id, "Silahkan tekan -> /daftar untuk melakukan pendaftaran ulang"),
+                    bot.send_message(chat_id, "Silahkan tekan -> /insert untuk melakukan pendaftaran ulang"),
                     self.first_step
                 )
             # remove used object at user_dict
@@ -257,10 +262,13 @@ class ListPengumuman:
 class DeletePengumuman:
     def deletePengumuman(self, message):
         chat_id = message.chat.id
+        list = ListPengumuman()
+        list.send_list(message)
         try:
             if checkuser(chat_id):
-                msg = bot.send_message(chat_id, text="Kirimkan ID pengumuman yang ingin dihapus : ")
-                bot.register_next_step_handler(msg, self.getPengumuman)
+                bot.register_next_step_handler(
+                    bot.send_message(chat_id, text="Kirimkan ID pengumuman yang ingin dihapus : "),
+                    self.getPengumuman)
             else:
                 bot.send_message(chat_id, "Anda Bukan Admin")
         except Exception as e:
@@ -294,8 +302,9 @@ class DeletePengumuman:
                            f"Akan Dihapus?"
                     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
                     markup.add('ya', 'tidak')
-                    msg = bot.send_message(chat_id, text, reply_markup=markup)
-                    bot.register_next_step_handler(msg, self.commit_database)
+                    bot.register_next_step_handler(
+                        bot.send_message(chat_id, text, reply_markup=markup),
+                        self.commit_database)
                 else:
                     bot.send_message(chat_id, "404 : data not found")
         except Exception as e:
@@ -328,9 +337,9 @@ class DeletePengumuman:
 
 class UpdatePengumuman:
     def first_step(self, message):
-        chat_id = int(message.chat.id) if message.chat.id.isdigit() else bot.register_next_step_handler(
-            bot.send_message(message.chat.id, "Silahkan masukkan ID pengumuman yang ingin diupdate"), self.first_step
-        )
+        chat_id = int(message.chat.id)
+        list = ListPengumuman()
+        list.send_list(message)
         try:
             if not checkuser(chat_id):
                 bot.reply_to(message, "Anda bukan admin")
@@ -363,48 +372,56 @@ class UpdatePengumuman:
                     user.setfromtuple(data)
                     global_dict[chat_id] = user
                     bot.send_message(chat_id, f"Isi Pengumuman : {user.isi}")
-                    msg = bot.reply_to(message, 'Isi yang mau diganti (SKIP untuk melewati): ')
-                    bot.register_next_step_handler(msg, self.third_step)
+                    bot.register_next_step_handler(
+                        bot.reply_to(message, 'Isi yang mau diganti (SKIP untuk melewati): '),
+                        self.third_step)
         except Exception as e:
             logfunc('nama', e)
             bot.send_message(chat_id, 'oooops terjadi error, silahkan ulang kembali')
 
+
     def third_step(self, message):
         chat_id = message.chat.id
         try:
-            isi = message.text.lower() if not message.text.isdigit() else str(message.text).lower()
+            isi = message.text if not message.text.isdigit() else str(message.text).lower()
             data = global_dict[chat_id]
             if isi in ["skip", "lewat"]:
                 pass
             else:
                 data.isi = isi
             bot.send_message(chat_id, f"Jurusan : {data.jurusan}")
-            msg = bot.reply_to(message, 'Jurusan yang ingin diganti ("skip" untuk melewati): ')
-            bot.register_next_step_handler(msg, self.forth_step)
+            bot.register_next_step_handler(
+                bot.reply_to(message, 'Jurusan yang ingin diganti ("skip" untuk melewati): '),
+                self.forth_step)
         except Exception as e:
             del global_dict[chat_id]
             logfunc("3Rd step Pengumuman", e)
             bot.send_message(chat_id, 'oooops terjadi error, silahkan ulang kembali')
-            # bot.register_next_step_handler(bot.send_message(chat_id, "Silahkan isi kembali"), self.first_step)
+
 
     def forth_step(self, message):
         chat_id = message.chat.id
         try:
-            jurusan = int(message.text) if message.text.isdigit() else message.text
+            jurusan = int(message.text) if message.text.isdigit() else str(message.text).lower()
             data = global_dict[chat_id]
-            if str(jurusan).lower() in ["skip", "lewat"]:
+            if jurusan in ["skip", "lewat"]:
                 bot.send_message(chat_id, f"Prodi : {data.prodi}")
-                msg = bot.reply_to(message, 'Prodi yang ingin diganti ("skip" untuk melewati): ')
-                bot.register_next_step_handler(msg, self.fifth_step)
+                bot.register_next_step_handler(
+                    bot.reply_to(message, 'Prodi yang ingin diganti ("skip" untuk melewati): '),
+                    self.fifth_step)
             elif jurusan not in dict_jurusan:
                 pesan = "\n".join(text_jurusan)
-                msg = bot.send_message(chat_id=chat_id, text=f"{pesan}\n\nTidak sesuai jurusan")
-                bot.register_next_step_handler(msg, self.forth_step)
+                bot.register_next_step_handler(
+                    bot.send_message(chat_id=chat_id, text=f"{pesan}\n\nTidak sesuai jurusan"),
+                    self.forth_step
+                )
             else:
                 data.jurusan = jurusan
                 bot.send_message(chat_id, f"Prodi : {data.prodi}")
-                msg = bot.reply_to(message, 'Prodi yang ingin diganti ("skip" untuk melewati): ')
-                bot.register_next_step_handler(msg, self.fifth_step)
+                bot.register_next_step_handler(
+                    bot.reply_to(message, 'Prodi yang ingin diganti ("skip" untuk melewati): '),
+                    self.fifth_step
+                )
         except Exception as e:
             del global_dict[chat_id]
             logfunc("5TH Pengumuman", e)
@@ -414,9 +431,9 @@ class UpdatePengumuman:
     def fifth_step(self, message):
         chat_id = message.chat.id
         try:
-            prodi = int(message.text) if message.text.isdigit() else message.text
+            prodi = int(message.text) if message.text.isdigit() else str(message.text).lower()
             data = global_dict[chat_id]
-            if str(prodi).lower() in ["skip", "lewat"]:
+            if prodi in ["skip", "lewat"]:
                 bot.send_message(chat_id, f"Tingkat : {data.tingkat}")
                 bot.register_next_step_handler(
                     bot.send_message(chat_id, 'Tingkat yang ingin diganti ("skip" untuk melewati): '),
@@ -431,8 +448,10 @@ class UpdatePengumuman:
             else:
                 data.prodi = prodi
                 bot.send_message(chat_id, f"Tingkat : {data.tingkat}")
-                msg = bot.reply_to(message, 'Tingkat yang ingin diganti ("skip" untuk melewati) : ')
-                bot.register_next_step_handler(msg, self.six_step)
+                bot.register_next_step_handler(
+                    bot.reply_to(message, 'Tingkat yang ingin diganti ("skip" untuk melewati) : '),
+                    self.six_step
+                )
         except Exception as e:
             logfunc("5TH Pengumuman", e)
             bot.register_next_step_handler(bot.reply_to(message, "Silahkan Isi Kembali"), self.fifth_step)
@@ -465,19 +484,21 @@ class UpdatePengumuman:
     def seven_step(self, message):
         chat_id = message.chat.id
         try:
-            tanggal = message.text if message.text.isnumeric() else str(message.text).lower()
+            tanggal = str(message.text).lower()
             data = global_dict[chat_id]
-            if str(tanggal).lower() in ["skip", "lewat"]:
+            if tanggal in ["skip", "lewat"]:
                 pass
             else:
                 tanggal = convert_to_utc(tanggal)
                 data.tanggal = tanggal
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
             markup.add('ya', 'tidak')
-            msg = bot.reply_to(message, f'Date-time (UTC) : {data.tanggal}\nJurusan : {data.jurusan}\n'
-                                        f'Prodi : {data.prodi}\nTingkat : {data.tingkat}\nIsi: {data.isi}\n',
-                               reply_markup=markup)
-            bot.register_next_step_handler(msg, self.commit_to_database)
+            bot.register_next_step_handler(
+                bot.send_message(chat_id, f'Date-time (UTC) : {data.tanggal}\nJurusan : {data.jurusan}\n'
+                                      f'Prodi : {data.prodi}\nTingkat : {data.tingkat}\nIsi: {data.isi}\n',
+                             reply_markup=markup),
+                self.commit_to_database
+            )
         except ValueError:
             bot.register_next_step_handler(
                 bot.reply_to(message, 'Format tidak sesuai, silahkan isi kembali'), self.seven_step
@@ -496,14 +517,10 @@ class UpdatePengumuman:
                          f"jurusan=%s,prodi=%s,tingkat=%s,tanggal=%s " \
                          f"WHERE id_pengumuman =%s"
                 val = (user.isi, user.jurusan, user.prodi, user.tingkat, str(user.tanggal), user.id_peng)
-                try:
-                    with create_conn() as conn:
-                        cursor = conn.cursor()
-                        cursor.execute(insert, val)
-                    bot.send_message(chat_id, "ok data sudah terupdate")
-                except Exception as e:
-                    bot.send_message(chat_id, "terjadi error silahkan ulang kembali")
-                    logfunc('commit database', e)
+                with create_conn() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(insert, val)
+                bot.send_message(chat_id, "ok data sudah terupdate")
             else:
                 bot.send_message(chat_id, "Silahkan tekan -> /update untuk melakukan update data")
             # remove used object at user_dict
@@ -515,20 +532,30 @@ class UpdatePengumuman:
 
 
 class DaftarUser:
-    def first_step(self, msg):
+    def get_nama(self,msg):
         chat_id = msg.chat.id
         if checksiswa(chat_id):
             bot.send_message(chat_id, "Anda sudah terdaftar")
         else:
-            try:
-                pesan = "\n".join(text_jurusan)
-                bot.send_message(chat_id=chat_id, text=f"List jurusan: \n{pesan}")
-                bot.register_next_step_handler(
-                    bot.send_message(chat_id, "Silahkan masukkan jurusan anda anda"), self.second_step
-                )
-            except Exception as e:
-                logfunc('first step Daftar', e)
-                bot.send_message(chat_id, "Terjadi error silahkan ulang kembali")
+            bot.register_next_step_handler(
+                bot.send_message(chat_id, "Silahkan masukkan nama anda"), self.first_step
+            )
+
+    def first_step(self, msg):
+        chat_id = msg.chat.id
+        user = User()
+        user.nama = msg.text
+        global_dict[chat_id] = user
+        try:
+            pesan = "\n".join(text_jurusan)
+            bot.send_message(chat_id=chat_id, text=f"List jurusan: \n{pesan}")
+            bot.register_next_step_handler(
+                bot.send_message(chat_id, "Silahkan masukkan jurusan anda anda"), self.second_step
+            )
+        except Exception as e:
+            del global_dict[chat_id]
+            logfunc('first step Daftar', e)
+            bot.send_message(chat_id, "Terjadi error silahkan ulang kembali")
 
     def second_step(self, msg):
         chat_id = msg.chat.id
@@ -536,7 +563,7 @@ class DaftarUser:
             text = int(msg.text) if msg.text.isdigit() else bot.register_next_step_handler(
                 bot.send_message(chat_id, "Input tidak sesuai, silahkan masukkan kembali"), self.third_step
             )
-            user = User()
+            user = global_dict[chat_id]
             user.id_tele = chat_id
             if text not in dict_jurusan:
                 msg = bot.send_message(chat_id, "\n".join(text_jurusan) +
@@ -562,9 +589,11 @@ class DaftarUser:
                 bot.send_message(chat_id, "Input tidak sesuai, silahkan masukkan kembali"), self.third_step
             )
             if text not in dict_prodi:
-                msg = bot.send_message(chat_id,
-                                       "\n".join(text_prodi) + "\nInput tidak sesuai, silahkan masukkan kembali")
-                bot.register_next_step_handler(msg, self.third_step)
+                bot.register_next_step_handler(
+                    bot.send_message(chat_id,
+                                     "\n".join(text_prodi) + "\nInput tidak sesuai, silahkan masukkan kembali"),
+                    self.third_step
+                )
             else:
                 user = global_dict[chat_id]
                 user.prodi = text
@@ -586,9 +615,15 @@ class DaftarUser:
             if text in range(1, 4):
                 user.tingkat = text
                 data = user.getastuple()
-                pesan = f"Tingkat : {data[3]}\nJurusan : {data[1]}\nProdi : {data[2]}\n"
+                bot.send_message(chat_id,f"Nama : {data[1]}\n"
+                                         f"Tingkat : {data[4]}\n"
+                                         f"Jurusan : {data[2]}\n"
+                                         f"Prodi : {data[3]}\n")
+                markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+                markup.add('ya', 'tidak')
                 bot.register_next_step_handler(
-                    bot.send_message(chat_id, pesan), self.fifth_step
+                    bot.send_message(chat_id, "Apakah anda ingin menambahkan data? (ya/tidak)", reply_markup=markup),
+                    self.commit_database_step
                 )
             else:
                 bot.send_message(chat_id, "Input tingkat hanya 1 sampai 4")
@@ -600,30 +635,14 @@ class DaftarUser:
             logfunc('fourth step Daftar', e)
             bot.send_message(chat_id, "Terjadi error silahkan ulang kembali")
 
-    def fifth_step(self, msg):
-        chat_id = msg.chat.id
-        try:
-            markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-            markup.add('ya', 'tidak')
-            bot.register_next_step_handler(
-                bot.send_message(chat_id, "Apakah anda ingin menambahkan data? (ya/tidak)", reply_markup=markup),
-                self.commit_database_step
-            )
-        except Exception as e:
-            del global_dict[chat_id]
-            logfunc('commit database', e)
-            bot.send_message(chat_id, "Terjadi error silahkan ulang kembali")
-
     def commit_database_step(self, msg):
         chat_id = msg.chat.id
         try:
             text = msg.text
             if text == 'ya':
                 user = global_dict[chat_id]
+                insert = "INSERT INTO `siswa`(`id_tele`, `nama`, `jurusan`, `prodi`, `tingkat`) VALUES (%s, %s, %s, %s, %s)"
                 val = user.getastuple()
-                insert = """
-                INSERT INTO user (id_tele, nama, jurusan, prodi, tingkat)
-                """
                 with create_conn() as conn:
                     cursor = conn.cursor()
                     cursor.execute(insert, val)
@@ -666,7 +685,7 @@ helper = Help()
 
 bot.register_message_handler(helper.help, commands=["help", "start", "bantuan"])
 bot.register_message_handler(pengu.first_step, commands=["insert"])
-bot.register_message_handler(daftar.first_step, commands=["daftar"])
+bot.register_message_handler(daftar.get_nama, commands=["daftar"])
 bot.register_message_handler(list_pengu.send_list, commands=["list"])
 bot.register_message_handler(del_pengu.deletePengumuman, commands=["del"])
 bot.register_message_handler(up_pengu.first_step, commands=["update"])

@@ -47,3 +47,17 @@ NAMA ERROR : 1064 (42000): You have an error in your SQL syntax; check the manua
 COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '1956' for key 'PRIMARY'
 NAMA ERROR : 1054 (42S22): Unknown column 'skip' in 'where clause'
 COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '6922' for key 'PRIMARY'
+COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '9207' for key 'PRIMARY'
+COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '5938' for key 'PRIMARY'
+COMMIT DATABASE ERROR : 1062 (23000): Duplicate entry '5938' for key 'PRIMARY'
+NAMA ERROR : 1054 (42S22): Unknown column 'None' in 'where clause'
+NAMA ERROR : 1054 (42S22): Unknown column 'None' in 'where clause'
+COMMIT DATABASE ERROR : Not all parameters were used in the SQL statement
+COMMIT DATABASE ERROR : Not all parameters were used in the SQL statement
+COMMIT DATABASE ERROR : Not enough parameters for the SQL statement
+COMMIT DATABASE ERROR : Not enough parameters for the SQL statement
+COMMIT DATABASE ERROR : Not enough parameters for the SQL statement
+COMMIT DATABASE ERROR : Not enough parameters for the SQL statement
+COMMIT DATABASE ERROR : 1136 (21S01): Column count doesn't match value count at row 1
+COMMIT DATABASE ERROR : 1136 (21S01): Column count doesn't match value count at row 1
+COMMIT DATABASE ERROR : 1136 (21S01): Column count doesn't match value count at row 1

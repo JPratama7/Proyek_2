@@ -8,3 +8,4 @@ lib_no.py
 __pycache__/*
 .env
 logbot.txt
+convert_try.py
