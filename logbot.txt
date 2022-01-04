@@ -61,3 +61,4 @@ COMMIT DATABASE ERROR : Not enough parameters for the SQL statement
 COMMIT DATABASE ERROR : 1136 (21S01): Column count doesn't match value count at row 1
 COMMIT DATABASE ERROR : 1136 (21S01): Column count doesn't match value count at row 1
 COMMIT DATABASE ERROR : 1136 (21S01): Column count doesn't match value count at row 1
+DB CONN NOT CREATED ERROR : 2003: Can't connect to MySQL server on 'localhost:3306' (111 Connection refused)
