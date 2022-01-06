@@ -459,7 +459,7 @@ class UpdatePengumuman:
     def six_step(self, message):
         try:
             chat_id = message.chat.id
-            tingkat = str(message.text).lower()
+            tingkat = int(message.text) if message.text.isdigit() else str(message.text).lower()
             data = global_dict[chat_id]
             if tingkat in ["skip", "lewat"]:
                 bot.send_message(chat_id, f"Tanggal : {convert_utc_to_usertz(data.tanggal, 'WIB')}")
