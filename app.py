@@ -1,11 +1,13 @@
 import os
+import re
 
 from telebot import TeleBot, types
 from dotenv import load_dotenv
 from dataclasses import dataclass
-from lib import checkuser, logfunc, create_conn, convert_to_utc, checksiswa, convert_utc_to_usertz
+from lib import checkuser, logfunc, create_conn, convert_to_utc, checksiswa, convert_utc_to_usertz,\
+    convert_to_utc_from_user
 from random import randint
-from signal import signal
+from mysql.connector import Error
 
 # Global Variable
 load_dotenv()
@@ -663,6 +665,8 @@ class Help:
         
         *Bantuan*
 Untuk melakukan pendaftaran siswa silahkan ketik /daftar
+Untuk menambahkan agenda silahkan ketik /agenda tambahkan
+Untuk menghapus agenda silahkan ketik /agenda hapus
         
         *Bantuan (Admin Only)*
 Untuk melihat daftar pengumuman silahkan ketik /list
@@ -675,6 +679,76 @@ Note:
         """
         bot.send_message(chat_id, pesan, parse_mode='Markdown')
 
+class Agenda:
+
+    def router(self, msg):
+        chat_id = msg.chat.id
+        text = msg.text.lower().split()
+        if text[1] == 'tambah':
+            self.tambah_agenda(msg)
+        elif text[1] == 'hapus':
+            self.remove_agenda(msg)
+        elif text[1] == 'list':
+            self.list_agenda(msg)
+        else:
+            bot.send_message(chat_id, "Perintah tidak dikenali")
+
+    def tambah_agenda(self, msg):
+        chat_id = msg.chat.id
+        text = msg.text.split(' ')
+        text = text[2:]
+        text = ' '.join(text)
+        result = re.split('agendanya', text)
+        if len(result) > 1:
+            list = [s.strip() for s in result]
+            agenda = list[1]
+            waktu = convert_to_utc_from_user(list[0])
+            with create_conn() as conn:
+                cursor = conn.cursor()
+                query = "INSERT INTO reminder_user VALUES (%s, %s, %s, %s)"
+                cursor.execute(query, (randint(1, 9999), chat_id, agenda, waktu))
+                conn.commit()
+                bot.send_message(chat_id, "Agenda telah ditambahkan")
+        else:
+            bot.send_message(chat_id, "Format agenda tidak sesuai"
+                                      "Silahkan mengikuti contoh dibawah ini"
+                                      "/agenda 6 jan 21 17:21 agendanya Mabar Valorant")
+
+    def list_agenda(self, msg):
+        chat_id = int(msg.chat.id)
+        with create_conn() as conn:
+            cursor = conn.cursor()
+            query = f"SELECT isi_reminder, waktu, id_reminder FROM reminder_user WHERE id_telegram = {chat_id}"
+            cursor.execute(query)
+            result = cursor.fetchall()
+            if len(result) > 0:
+                for i in result:
+                    bot.send_message(chat_id, f"ID Reminder: {i[2]}\nWaktu: {convert_utc_to_usertz(i[1], 'WIB')}\nAgenda: {i[0]}")
+            else:
+                bot.send_message(chat_id, "Anda belum memiliki agenda")
+
+    def remove_agenda(self, msg):
+        chat_id = msg.chat.id
+        text = msg.text.split(' ')
+        text = text[2:]
+        if len(text) != 0:
+            if text[0].isdigit():
+                agenda = int(text[0])
+                with create_conn() as conn:
+                    cursor = conn.cursor()
+                    query = "DELETE FROM reminder_user WHERE id_reminder = %s AND id_telegram = %s"
+                    try:
+                        cursor.execute(query, (agenda, chat_id))
+                        bot.send_message(chat_id, "Agenda telah Dihapus")
+                    except Error:
+                        bot.send_message(chat_id, "Agenda tidak ditemukan")
+            else:
+                bot.send_message(chat_id, "WHY U ISI SELAIN ANGKA")
+        else:
+            bot.send_message(chat_id, "Format agenda tidak sesuai"
+                                      "Silahkan mengikuti contoh dibawah ini"
+                                      "/agenda hapus 123456")
+
 
 list_pengu = ListPengumuman()
 pengu = InsertPengumuman()
@@ -682,8 +756,10 @@ del_pengu = DeletePengumuman()
 up_pengu = UpdatePengumuman()
 daftar = DaftarUser()
 helper = Help()
+agenda = Agenda()
 
 bot.register_message_handler(helper.help, commands=["help", "start", "bantuan"])
+bot.register_message_handler(agenda.router, commands=["agenda"])
 bot.register_message_handler(pengu.first_step, commands=["insert"])
 bot.register_message_handler(daftar.get_nama, commands=["daftar"])
 bot.register_message_handler(list_pengu.send_list, commands=["list"])

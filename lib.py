@@ -19,6 +19,8 @@ TZ_ENV = os.getenv('TIMEZONE')
 timezone_dict = {"WIB": "Asia/Jakarta", "WITA": "Asia/Makassar", "WIT": "Asia/Jayapura"}
 format_time = '%d/%m/%Y %H:%M'
 
+date_format = '%d %b %y %H:%M'
+
 
 def logfunc(type : str, e : Exception):
     type = str(type).upper()
@@ -74,4 +76,12 @@ def convert_utc_to_usertz(date_time : "Datetime object", user_timezone : "Destin
     date_time = date_time.replace(tzinfo=pytz.UTC)
     date_time = date_time.astimezone(tz_user).strftime(format_time)
     # date_time = date_time.astimezone(timezone(tz_user)).strftime(format_time)
+    return date_time
+
+def convert_to_utc_from_user(date_time : "Datetime object"):
+    date_time = date_time.lower()
+    if not isinstance(date_time, datetime):
+        date_time = datetime.strptime(date_time, date_format)
+    date_time = date_time.astimezone(pytz.UTC).strftime(date_format)
+    date_time = datetime.strptime(date_time, date_format)
     return date_time

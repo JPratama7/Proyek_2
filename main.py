@@ -1,6 +1,5 @@
 import os
 from multiprocessing import Process
-from signal import signal, SIGINT
 from telebot import TeleBot
 from dotenv import load_dotenv
 

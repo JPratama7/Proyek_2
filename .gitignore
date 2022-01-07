@@ -9,3 +9,4 @@ __pycache__/*
 .env
 logbot.txt
 convert_try.py
+test_new_feature.py
