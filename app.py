@@ -667,6 +667,7 @@ class Help:
 Untuk melakukan pendaftaran siswa silahkan ketik /daftar
 Untuk menambahkan agenda silahkan ketik /agenda tambahkan
 Untuk menghapus agenda silahkan ketik /agenda hapus
+Untuk menampilkan agenda silahkan ketik /agenda list
         
         *Bantuan (Admin Only)*
 Untuk melihat daftar pengumuman silahkan ketik /list
@@ -684,14 +685,17 @@ class Agenda:
     def router(self, msg):
         chat_id = msg.chat.id
         text = msg.text.lower().split()
-        if text[1] == 'tambah':
-            self.tambah_agenda(msg)
-        elif text[1] == 'hapus':
-            self.remove_agenda(msg)
-        elif text[1] == 'list':
-            self.list_agenda(msg)
+        if len(text) > 1:
+            if text[1] == 'tambah':
+                self.tambah_agenda(msg)
+            elif text[1] == 'hapus':
+                self.remove_agenda(msg)
+            elif text[1] == 'list':
+                self.list_agenda(msg)
+            else:
+                bot.send_message(chat_id, "Perintah tidak dikenali")
         else:
-            bot.send_message(chat_id, "Perintah tidak dikenali")
+            bot.send_message(chat_id, "WHY PERINTAHNYA KURANG")
 
     def tambah_agenda(self, msg):
         chat_id = msg.chat.id
@@ -710,8 +714,8 @@ class Agenda:
                 conn.commit()
                 bot.send_message(chat_id, "Agenda telah ditambahkan")
         else:
-            bot.send_message(chat_id, "Format agenda tidak sesuai"
-                                      "Silahkan mengikuti contoh dibawah ini"
+            bot.send_message(chat_id, "Format agenda tidak sesuai\n"
+                                      "Silahkan mengikuti contoh dibawah ini\n"
                                       "/agenda 6 jan 21 17:21 agendanya Mabar Valorant")
 
     def list_agenda(self, msg):
@@ -745,8 +749,8 @@ class Agenda:
             else:
                 bot.send_message(chat_id, "WHY U ISI SELAIN ANGKA")
         else:
-            bot.send_message(chat_id, "Format agenda tidak sesuai"
-                                      "Silahkan mengikuti contoh dibawah ini"
+            bot.send_message(chat_id, "Format agenda tidak sesuai\n"
+                                      "Silahkan mengikuti contoh dibawah ini\n"
                                       "/agenda hapus 123456")
 
 

@@ -25,7 +25,7 @@ bool = True if HOST != "" and USER != "" and DATABASE != "" and TOKEN != "" and 
 if __name__ == "__main__":
     if bool:
         print(f"Current TimeZone : {tz}")
-        print("Starting Reminder")
+        print("Starting Reminder Pengumuman")
         while 1:
             noow = convert_to_utc(datetime.now(timezone(tz)))
             with create_conn() as conn:
