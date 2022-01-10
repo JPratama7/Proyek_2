@@ -704,15 +704,20 @@ class Agenda:
         text = ' '.join(text)
         result = re.split('agendanya', text)
         if len(result) > 1:
-            list = [s.strip() for s in result]
-            agenda = list[1]
-            waktu = convert_to_utc_from_user(list[0])
-            with create_conn() as conn:
-                cursor = conn.cursor()
-                query = "INSERT INTO reminder_user VALUES (%s, %s, %s, %s)"
-                cursor.execute(query, (randint(1, 9999), chat_id, agenda, waktu))
-                conn.commit()
-                bot.send_message(chat_id, "Agenda telah ditambahkan")
+            try:
+                list = [s.strip() for s in result]
+                agenda = list[1]
+                waktu = convert_to_utc_from_user(list[0])
+                with create_conn() as conn:
+                    cursor = conn.cursor()
+                    query = "INSERT INTO reminder_user VALUES (%s, %s, %s, %s)"
+                    cursor.execute(query, (randint(1, 9999), chat_id, agenda, waktu))
+                    conn.commit()
+                    bot.send_message(chat_id, "Agenda telah ditambahkan")
+            except:
+                bot.send_message(chat_id, "Format agenda tidak sesuai\n"
+                                          "Silahkan mengikuti contoh dibawah ini\n"
+                                          "/agenda 6 jan 21 17:21 agendanya Mabar Valorant")
         else:
             bot.send_message(chat_id, "Format agenda tidak sesuai\n"
                                       "Silahkan mengikuti contoh dibawah ini\n"
