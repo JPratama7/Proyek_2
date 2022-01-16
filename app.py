@@ -5,7 +5,7 @@ from telebot import TeleBot, types
 from dotenv import load_dotenv
 from dataclasses import dataclass
 from lib import checkuser, logfunc, create_conn, convert_to_utc, checksiswa, convert_utc_to_usertz,\
-    convert_to_utc_from_user
+    convert_to_utc_from_user, reminder_tuition
 from random import randint
 from mysql.connector import Error
 
@@ -261,11 +261,10 @@ class ListPengumuman:
             bot.send_message(chat_id, 'oooops terjadi error, silahkan ulang kembali')
 
 
-class DeletePengumuman:
+class DeletePengumuman(ListPengumuman):
     def deletePengumuman(self, message):
         chat_id = message.chat.id
-        list = ListPengumuman()
-        list.send_list(message)
+        self.send_list(message)
         try:
             if checkuser(chat_id):
                 bot.register_next_step_handler(
@@ -337,11 +336,10 @@ class DeletePengumuman:
             bot.send_message(chat_id, 'oooops terjadi error, silahkan ulang kembali')
 
 
-class UpdatePengumuman:
+class UpdatePengumuman(ListPengumuman):
     def first_step(self, message):
         chat_id = int(message.chat.id)
-        list = ListPengumuman()
-        list.send_list(message)
+        self.send_list(message)
         try:
             if not checkuser(chat_id):
                 bot.reply_to(message, "Anda bukan admin")
@@ -680,6 +678,18 @@ Note:
         """
         bot.send_message(chat_id, pesan, parse_mode='Markdown')
 
+    def tuition_reminder(self, msg):
+        chat_id = msg.chat.id
+        if checkuser(chat_id):
+            bot.send_message(chat_id, "Mengirimkan pengingat pembayaran")
+            try:
+                reminder_tuition(bot)
+            except:
+                bot.send_message(chat_id, "Terjadi error silahkan ulang kembali")
+
+            bot.send_message(chat_id, "Pengingat pembayaran telah dikirim")
+
+
 class Agenda:
 
     def router(self, msg):
@@ -774,6 +784,7 @@ bot.register_message_handler(daftar.get_nama, commands=["daftar"])
 bot.register_message_handler(list_pengu.send_list, commands=["list"])
 bot.register_message_handler(del_pengu.deletePengumuman, commands=["del"])
 bot.register_message_handler(up_pengu.first_step, commands=["update"])
+bot.register_message_handler(helper.tuition_reminder, commands=["tuition"])
 
 if __name__ == '__main__':
     get_prodi()

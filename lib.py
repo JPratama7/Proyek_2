@@ -85,3 +85,27 @@ def convert_to_utc_from_user(date_time : "Datetime object"):
     date_time = date_time.astimezone(pytz.UTC).strftime(date_format)
     date_time = datetime.strptime(date_time, date_format)
     return date_time
+
+def reminder_tuition(bot : "Telebot Object") -> None:
+    with create_conn() as conn:
+        cursor = conn.cursor()
+        query = "SELECT id_prodi from prodi"
+        cursor.execute(query)
+        result = cursor.fetchall()
+        for i in result:
+            query = f"SELECT s.id_tele, (p.spp-s.paid_tuition) FROM siswa s JOIN prodi p WHERE s.prodi = p.id_prodi " \
+                    f"AND s.paid_tuition < (SELECT spp FROM prodi WHERE id_prodi = %s) AND s.prodi = %s;"
+            cursor.execute(query, (i[0], i[0]))
+            result_set = cursor.fetchall()
+            if len(result_set) != 0:
+                for data in result_set:
+                    try:
+                        msg = f"""
+Pengingat SPP
+ID Tele : {data[0]}
+Sisa SPP : {data[1]}
+                                    """
+                        bot.send_message(data[0], msg)
+                        print(f"Sending to {data[0]}")
+                    except:
+                        print(f"Failed to send to {data[0]}")
