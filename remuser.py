@@ -41,7 +41,7 @@ if __name__ == "__main__":
                         except:
                             print(f"Failed to send to {data[0]}")
 
-                    sleep(60)
+            sleep(60)
 
     else:
         print("Silahkan isi ENV file")

@@ -13,7 +13,7 @@ def start_reminder_pengumuman():
     os.system('python rempeng.py')
 
 def start_reminder_user():
-    os.system('python rempeng.py')
+    os.system('python remuser.py')
 
 if __name__=='__main__':
     p1 = Process(target=start_reminder_pengumuman)
