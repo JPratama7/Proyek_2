@@ -10,3 +10,4 @@ __pycache__/*
 logbot.txt
 convert_try.py
 test_new_feature.py
+data.txt

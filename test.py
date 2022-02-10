@@ -1,8 +1,11 @@
-from lib import convert_utc_to_usertz, convert_to_utc, checksiswa, checkuser
+from lib import convert_utc_to_usertz, convert_to_utc, checksiswa, checkuser, reminder_tuition, create_random
 from datetime import datetime
 from pytz import timezone
 
 format_time = '%d/%m/%Y %H:%M'
+
+def test_random():
+    assert create_random() != create_random()
 
 def test_convert_to_utc():
     assert convert_to_utc(datetime.now(timezone('Asia/Jakarta'))).strftime(format_time) == datetime.utcnow().strftime(format_time)
@@ -21,3 +24,6 @@ def test_checkuser_success():
 
 def test_checkuser_fail():
     assert checkuser(1255213541) == False
+
+def pengiriman_tuition():
+    assert reminder_tuition() == True

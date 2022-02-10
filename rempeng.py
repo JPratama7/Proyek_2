@@ -18,8 +18,8 @@ TZ_ENV = os.getenv('TIMEZONE')
 
 
 bot = TeleBot(TOKEN)
-tz = timezone_dict.get(TZ_ENV)
-bool = True if HOST != "" and USER != "" and DATABASE != "" and TOKEN != "" and TZ_ENV != "" else False
+tz = timezone_dict.get(TZ_ENV) if TZ_ENV in timezone_dict else ""
+bool = True if HOST != "" and USER != "" and DATABASE != "" and TOKEN != "" and tz != "" else False
 
 
 if __name__ == "__main__":

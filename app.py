@@ -5,8 +5,7 @@ from telebot import TeleBot, types
 from dotenv import load_dotenv
 from dataclasses import dataclass
 from lib import checkuser, logfunc, create_conn, convert_to_utc, checksiswa, convert_utc_to_usertz,\
-    convert_to_utc_from_user, reminder_tuition
-from random import randint
+    convert_to_utc_from_user, reminder_tuition, create_random
 from mysql.connector import Error
 
 # Global Variable
@@ -28,9 +27,9 @@ def get_jurusan():
         cursor = conn.cursor()
         cursor.execute("select * from jurusan")
         data = cursor.fetchall()
-        for i in data:
-            dict_jurusan[i[0]] = i[1]
-            msg = f"{i[0]} {i[1]}"
+        for id, nama in data:
+            dict_jurusan[id] = nama
+            msg = f"{id} : {nama}"
             text_jurusan.append(msg)
 
 
@@ -40,15 +39,14 @@ def get_prodi():
         cursor = conn.cursor()
         cursor.execute("select * from prodi")
         data = cursor.fetchall()
-        for i in data:
-            dict_prodi[i[0]] = i[1]
-            msg = f"{i[0]} {i[1]}"
+        for id, nama, _ in data:
+            dict_prodi[id] = nama
+            msg = f"{id} : {nama}"
             text_prodi.append(msg)
-
 
 @dataclass
 class DataPengumu:
-    id_peng = randint(1000, 9999)
+    id_peng = create_random(1000, 9999)
     id_tele = int
     isi = str
     jurusan = int
@@ -194,8 +192,8 @@ class InsertPengumuman:
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
             markup.add('ya', 'tidak')
             bot.register_next_step_handler(
-                bot.reply_to(message, f'Date-time (UTC) : {data.tanggal}\nJurusan : {data.jurusan}\n'
-                                      f'Prodi : {data.prodi}\nTingkat : {data.tingkat}\nIsi: {data.isi}\n',
+                bot.reply_to(message, f'Date-time (UTC) : {data.tanggal}\nJurusan : {dict_jurusan.get(data.jurusan)}\n'
+                                      f'Prodi : {dict_prodi.get(data.prodi)}\nTingkat : {data.tingkat}\nIsi: {data.isi}\n',
                              reply_markup=markup),
                 self.commit_to_database
             )
@@ -240,7 +238,8 @@ class ListPengumuman:
             if checkuser(chat_id):
                 with create_conn() as conn:
                     cursor = conn.cursor()
-                    query = "SELECT isi_pengumuman.id_pengumuman, isi_pengumuman.isi, jurusan.nama_jur, prodi.nama_prod," \
+                    query = "SELECT isi_pengumuman.id_pengumuman, isi_pengumuman.isi, jurusan.nama_jur, " \
+                            "prodi.nama_prod," \
                             " isi_pengumuman.tingkat, user.nama, isi_pengumuman.tanggal " \
                             "FROM isi_pengumuman " \
                             "INNER JOIN jurusan ON isi_pengumuman.jurusan = jurusan.id_jur " \
@@ -251,7 +250,8 @@ class ListPengumuman:
                     bot.send_message(chat_id, "Sedang mengambil data")
                     for data in list_data:
                         id_pengumuman, isi, nama_jur, prodi, tingkat, nama, tanggal = data
-                        text = f"Nama Penulis : {nama}\nTanggal Pengingat : {tanggal}\nID Pengumuman: {id_pengumuman}\nJurusan : {nama_jur}\n" \
+                        text = f"Nama Penulis : {nama}\nTanggal Pengingat : {tanggal}\nID Pengumuman:" \
+                               f" {id_pengumuman}\nJurusan : {nama_jur}\n" \
                                f"Prodi : {prodi}\nTingkat : {tingkat}\nIsi : \n{isi}\n"
                         bot.send_message(chat_id, text)
             else:
@@ -288,7 +288,8 @@ class DeletePengumuman(ListPengumuman):
             global_dict[chat_id] = user
             with create_conn() as conn:
                 cursor = conn.cursor()
-                query = "SELECT isi_pengumuman.id_pengumuman, isi_pengumuman.isi, jurusan.nama_jur, prodi.nama_prod, isi_pengumuman.tingkat, user.nama, isi_pengumuman.tanggal " \
+                query = "SELECT isi_pengumuman.id_pengumuman, isi_pengumuman.isi, jurusan.nama_jur, prodi.nama_prod, " \
+                        "isi_pengumuman.tingkat, user.nama, isi_pengumuman.tanggal " \
                         "FROM isi_pengumuman " \
                         "INNER JOIN jurusan ON isi_pengumuman.jurusan = jurusan.id_jur " \
                         "INNER JOIN prodi ON isi_pengumuman.prodi=prodi.id_prodi " \
@@ -389,7 +390,7 @@ class UpdatePengumuman(ListPengumuman):
                 pass
             else:
                 data.isi = isi
-            bot.send_message(chat_id, f"Jurusan : {data.jurusan}")
+            bot.send_message(chat_id, f"Jurusan : {dict_jurusan.get(data.jurusan)}")
             bot.register_next_step_handler(
                 bot.reply_to(message, 'Jurusan yang ingin diganti ("skip" untuk melewati): '),
                 self.forth_step)
@@ -405,7 +406,7 @@ class UpdatePengumuman(ListPengumuman):
             jurusan = int(message.text) if message.text.isdigit() else str(message.text).lower()
             data = global_dict[chat_id]
             if jurusan in ["skip", "lewat"]:
-                bot.send_message(chat_id, f"Prodi : {data.prodi}")
+                bot.send_message(chat_id, f"Prodi : {dict_prodi.get(data.prodi)}")
                 bot.register_next_step_handler(
                     bot.reply_to(message, 'Prodi yang ingin diganti ("skip" untuk melewati): '),
                     self.fifth_step)
@@ -417,7 +418,7 @@ class UpdatePengumuman(ListPengumuman):
                 )
             else:
                 data.jurusan = jurusan
-                bot.send_message(chat_id, f"Prodi : {data.prodi}")
+                bot.send_message(chat_id, f"Prodi : {dict_prodi.get(data.prodi)}")
                 bot.register_next_step_handler(
                     bot.reply_to(message, 'Prodi yang ingin diganti ("skip" untuk melewati): '),
                     self.fifth_step
@@ -494,8 +495,8 @@ class UpdatePengumuman(ListPengumuman):
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
             markup.add('ya', 'tidak')
             bot.register_next_step_handler(
-                bot.send_message(chat_id, f'Date-time (UTC) : {data.tanggal}\nJurusan : {data.jurusan}\n'
-                                      f'Prodi : {data.prodi}\nTingkat : {data.tingkat}\nIsi: {data.isi}\n',
+                bot.send_message(chat_id, f'Date-time (UTC) : {data.tanggal}\nJurusan : {dict_jurusan.get(data.jurusan)}\n'
+                                      f'Prodi : {dict_prodi.get(data.prodi)}\nTingkat : {data.tingkat}\nIsi: {data.isi}\n',
                              reply_markup=markup),
                 self.commit_to_database
             )
@@ -617,8 +618,8 @@ class DaftarUser:
                 data = user.getastuple()
                 bot.send_message(chat_id,f"Nama : {data[1]}\n"
                                          f"Tingkat : {data[4]}\n"
-                                         f"Jurusan : {data[2]}\n"
-                                         f"Prodi : {data[3]}\n")
+                                         f"Jurusan : {dict_jurusan.get(data[2])}\n"
+                                         f"Prodi : {dict_prodi.get(data[3])}\n")
                 markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
                 markup.add('ya', 'tidak')
                 bot.register_next_step_handler(
@@ -663,7 +664,7 @@ class Help:
         
         *Bantuan*
 Untuk melakukan pendaftaran siswa silahkan ketik /daftar
-Untuk menambahkan agenda silahkan ketik /agenda tambahkan
+Untuk menambahkan agenda silahkan ketik /agenda tambah
 Untuk menghapus agenda silahkan ketik /agenda hapus
 Untuk menampilkan agenda silahkan ketik /agenda list
         
@@ -681,7 +682,7 @@ Note:
     def tuition_reminder(self, msg):
         chat_id = msg.chat.id
         if checkuser(chat_id):
-            bot.send_message(chat_id, "Mengirimkan pengingat pembayaran")
+            bot.send_message(chat_id, "Meanderings pengingat pembayaran")
             try:
                 reminder_tuition(bot)
             except:
@@ -721,14 +722,16 @@ class Agenda:
                 with create_conn() as conn:
                     cursor = conn.cursor()
                     query = "INSERT INTO reminder_user VALUES (%s, %s, %s, %s)"
-                    cursor.execute(query, (randint(1, 9999), chat_id, agenda, waktu))
+                    cursor.execute(query, (create_random(), chat_id, agenda, waktu))
                     conn.commit()
                     bot.send_message(chat_id, "Agenda telah ditambahkan")
-            except:
+            except Exception as e:
+                print(e)
                 bot.send_message(chat_id, "Format agenda tidak sesuai\n"
                                           "Silahkan mengikuti contoh dibawah ini\n"
                                           "/agenda 6 jan 21 17:21 agendanya Mabar Valorant")
         else:
+            print(result)
             bot.send_message(chat_id, "Format agenda tidak sesuai\n"
                                       "Silahkan mengikuti contoh dibawah ini\n"
                                       "/agenda 6 jan 21 17:21 agendanya Mabar Valorant")
